@@ -1,0 +1,164 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'app/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      build_apk:
+        description: 'Build APK (true/false)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: build-android-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  version-bump:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    # Prevent infinite loop: skip if commit was already an automated bump or has [skip ci]
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !startsWith(github.event.head_commit.message, 'chore(release): bump version')
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+      version_code: ${{ steps.bump.outputs.version_code }}
+      is_release: ${{ steps.check_release.outputs.is_release }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Check if commit requests a release
+        id: check_release
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.build_apk }}" = "true" ]; then
+              echo "is_release=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "is_release=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            if echo "$COMMIT_MSG" | grep -qi "\[release\]"; then
+              echo "Release tag [release] detected in commit message."
+              echo "is_release=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "No [release] tag detected. APK build will be skipped."
+              echo "is_release=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bump Version
+        id: bump
+        run: node app/scripts/bump-version.js
+
+      - name: Commit and Push bumped version back to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/package.json app/package-lock.json app/app.json
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(release): bump version to ${{ steps.bump.outputs.new_version }} [skip ci]"
+            git push origin ${{ github.ref_name }}
+          else
+            echo "No version changes to commit."
+          fi
+
+  build-apk:
+    name: Build Android APK
+    needs: version-bump
+    # Only build APK if commit contained [release] or triggered manually
+    if: needs.version-bump.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository (bumped commit)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: 'app/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prebuild Android project
+        working-directory: app
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Build Android Release APK
+        working-directory: app/android
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=512m"
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Prepare APK for upload
+        run: |
+          mkdir -p app/build-output
+          APK_PATH=$(find app/android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            APK_PATH=$(find app/android/app/build/outputs/apk -name "*.apk" | head -n 1)
+          fi
+          if [ -n "$APK_PATH" ]; then
+            echo "Found APK at: $APK_PATH"
+            cp "$APK_PATH" "app/build-output/bridges-app-v${{ needs.version-bump.outputs.new_version }}.apk"
+          else
+            echo "Error: No APK file was generated." >&2
+            exit 1
+          fi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bridges-app-v${{ needs.version-bump.outputs.new_version }}
+          path: app/build-output/bridges-app-v${{ needs.version-bump.outputs.new_version }}.apk
+          retention-days: 14
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version-bump.outputs.new_version }}
+          name: Release v${{ needs.version-bump.outputs.new_version }}
+          files: app/build-output/bridges-app-v${{ needs.version-bump.outputs.new_version }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
