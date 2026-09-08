@@ -5,9 +5,6 @@ on:
     branches:
       - main
       - master
-    paths:
-      - 'app/**'
-      - '.github/workflows/**'
   workflow_dispatch:
     inputs:
       build_apk:
