@@ -1,66 +1,46 @@
-import "dotenv/config";
-import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from '@prisma/client';
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not defined in environment variables");
-}
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString }),
-});
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding database...");
+  await prisma.report.deleteMany({});
+  await prisma.user.deleteMany({});
 
-  // Clean up existing records in reverse relation order
-  await prisma.post.deleteMany();
-  await prisma.user.deleteMany();
-
-  const user1 = await prisma.user.create({
+  const student = await prisma.user.create({
     data: {
-      email: "alice@example.com",
-      name: "Alice Johnson",
-      posts: {
-        create: [
-          {
-            title: "Getting Started with Prisma and Next.js",
-            content: "Prisma provides end-to-end type safety for database access.",
-            published: true,
-          },
-          {
-            title: "Scaling Backend Microservices",
-            content: "Modular architecture keeps domain logic isolated and testable.",
-            published: false,
-          },
-        ],
-      },
+      name: 'Alex Johnson',
+      email: 'alex@example.com',
+      role: 'STUDENT',
+      isSuspended: false,
+      verificationStatus: 'APPROVED',
     },
   });
 
-  const user2 = await prisma.user.create({
+  const reportedUser = await prisma.user.create({
     data: {
-      email: "bob@example.com",
-      name: "Bob Smith",
-      posts: {
-        create: [
-          {
-            title: "PostgreSQL Connection Pooling",
-            content: "Using adapter-pg ensures efficient serverless connection pooling.",
-            published: true,
-          },
-        ],
-      },
+      name: 'Michael Scott',
+      email: 'michael@example.com',
+      role: 'STUDENT',
+      isSuspended: false,
+      verificationStatus: 'PENDING',
     },
   });
 
-  console.log("Seeded users:", [user1.email, user2.email]);
+  await prisma.report.create({
+    data: {
+      reporterId: student.id,
+      reportedUserId: reportedUser.id,
+      reason: 'Inappropriate language in group chat.',
+      status: 'OPEN',
+    },
+  });
+
+  console.log('Database re-seeded with report data!');
 }
 
 main()
   .catch((e) => {
-    console.error("Error during seed:", e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {
