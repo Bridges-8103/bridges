@@ -106,3 +106,17 @@ Temporary Items
 .apdisk
 
 /.idea
+
+# Environment variables & secrets
+.env
+.env.*
+*.env
+!.env.example
+.env*.local
+
+# Dependencies & build caches
+node_modules/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
