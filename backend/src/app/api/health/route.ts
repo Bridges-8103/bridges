@@ -1,32 +1,27 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendResponse } from "@/lib/sendResponse";
 
 export async function GET() {
   try {
-    // Run a lightweight raw query to verify database connection
+    // Verify database connection with a lightweight ping
     await prisma.$queryRaw`SELECT 1`;
 
-    const userCount = await prisma.user.count();
-    const postCount = await prisma.post.count();
-
-    return NextResponse.json({
+    return sendResponse(200, {
       status: "healthy",
       database: "connected",
-      counts: {
-        users: userCount,
-        posts: postCount,
-      },
       timestamp: new Date().toISOString(),
-    });
+    }, "API and database are healthy.");
   } catch (error) {
-    console.error("Database health check failed:", error);
-    return NextResponse.json(
+    console.error("Health check failed:", error);
+    return sendResponse(
+      503,
       {
         status: "unhealthy",
         database: "disconnected",
-        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      "Database connection failed.",
+      error instanceof Error ? error.message : "Unknown error"
     );
   }
 }

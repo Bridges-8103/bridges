@@ -101,8 +101,22 @@ src/app/api/
      return sendResponse(400, null, result.error.format());
    }
    ```
-3. **Centralized Middleware for Cross-Cutting Concerns**:
-   Handle authentication, authorization headers, logging, and CORS using Next.js `middleware.ts` or reusable helper wrappers instead of repeating logic inside individual route handlers.
+3. **Centralized Middleware & Authentication Pipeline (Two-Tier Architecture)**:
+   - **Tier 1 (Edge Proxy / Middleware `src/proxy.ts` or `src/middleware.ts`)**:
+     - Runs at the edge before route handlers.
+     - Handles CORS preflight (`OPTIONS`) with permissive headers for mobile apps (Expo) and web clients.
+     - Whitelists public paths (`/api/health`, `/api/auth/login`, etc.).
+     - Intercepts protected requests, verifies `Authorization: Bearer <token>` or session cookies using Edge-compatible Web Crypto (`crypto.subtle`), and injects verified user headers (`x-user-id`, `x-user-email`, `x-user-role`).
+   - **Tier 2 (Route Handler Auth Guard `withAuth`)**:
+     - Route handlers wrap protected endpoints with `withAuth(async (req, { user, params }) => ...)`.
+     - Automatically verifies role-based access control (RBAC) and exposes typed `user: AuthUser` to the handler.
+   ```ts
+   // Example: Protected API Route
+   export const GET = withAuth(async (req, { user }) => {
+     const profile = await ProfileService.getProfileByUserId(user.id);
+     return sendResponse(200, profile);
+   });
+   ```
 4. **Descriptive Error Handling**:
    Never fail silently or return raw stack traces. Catch exceptions and return appropriate HTTP status codes (400, 401, 403, 404, 500) with informative messages:
    ```ts
