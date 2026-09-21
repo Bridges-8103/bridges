@@ -51,6 +51,10 @@ function AuthGate() {
 }
 
 function MissingKeyScreen({ invalidKey = false }: { invalidKey?: boolean }) {
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
   return (
     <View style={styles.missingKey}>
       <Text style={styles.missingKeyTitle}>
@@ -66,6 +70,14 @@ function MissingKeyScreen({ invalidKey = false }: { invalidKey?: boolean }) {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    // Safety fallback: guarantee splash screen hides even if overlay animation stalls
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (!hasValidPublishableKey) {
     return <MissingKeyScreen invalidKey={Boolean(publishableKey)} />;
   }
