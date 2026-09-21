@@ -1,6 +1,9 @@
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyJwt } from "@/lib/jwt";
 import { sendResponse } from "@/lib/sendResponse";
+
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
 
 /**
  * Public routes that do not require authentication tokens.
@@ -53,11 +56,11 @@ function applyCorsHeaders(response: NextResponse, origin: string | null): NextRe
 }
 
 /**
- * Next.js Edge Proxy (Edge Middleware).
+ * Edge Proxy handler for API routes.
  * Intercepts requests before reaching App Router handlers to enforce CORS, route guards,
  * and authenticated user header injection.
  */
-export async function proxy(req: NextRequest) {
+async function handleApiProxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
   const origin = req.headers.get("origin");
 
@@ -65,11 +68,6 @@ export async function proxy(req: NextRequest) {
   if (req.method === "OPTIONS") {
     const preflight = new NextResponse(null, { status: 204 });
     return applyCorsHeaders(preflight, origin);
-  }
-
-  // Only apply API guarding to /api routes
-  if (!pathname.startsWith("/api")) {
-    return NextResponse.next();
   }
 
   // Allow public endpoints to pass through directly
@@ -119,6 +117,20 @@ export async function proxy(req: NextRequest) {
   }
 }
 
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+    return;
+  }
+
+  if (req.nextUrl.pathname.startsWith("/api")) {
+    return handleApiProxy(req);
+  }
+});
+
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: [
+    "/((?!_next|[^?]*\\.[\\w]+$).*)",
+    "/(api|trpc)(.*)",
+  ],
 };
