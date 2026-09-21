@@ -8,6 +8,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
+// =====================================================
+// ENUMS
+// =====================================================
+
 enum Role {
   STUDENT
   MENTOR
@@ -20,23 +25,146 @@ enum VerificationStatus {
   REJECTED
 }
 
+
+// =====================================================
+// USER
+// Common information for all users
+// =====================================================
+
 model User {
-  id                 String             @id @default(uuid())
+  id                 Int                @id @default(autoincrement())
   name               String
   email              String             @unique
   role               Role               @default(STUDENT)
   isSuspended        Boolean            @default(false)
   verificationStatus VerificationStatus @default(PENDING)
+
   createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // Role-specific profile
+  studentDetail      StudentDetail?
+  mentorDetail       MentorDetail?
+
+  // Available to both students and mentors
+  socialLinks        SocialLink[]
+
+  // Reports
   reportsReceived    Report[]           @relation("ReportedUser")
+
+  @@index([role])
+  @@index([verificationStatus])
 }
 
+
+// =====================================================
+// STUDENT DETAILS
+// Student-specific profile information
+// =====================================================
+
+model StudentDetail {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+
+  university   String?
+  degree       String?
+  fieldOfStudy String?
+  yearOfStudy  Int?
+
+  interests    String[]
+  skills       String[]
+  careerGoals  String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([university])
+  @@index([fieldOfStudy])
+}
+
+
+// =====================================================
+// MENTOR DETAILS
+// Mentor-specific professional information
+// =====================================================
+
+model MentorDetail {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @unique
+
+  jobTitle           String?
+  company            String?
+  industry           String?
+  yearsExperience    Int?
+
+  expertise          String[]
+  preferredEnquiries String[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  @@index([industry])
+}
+
+
+// =====================================================
+// SOCIAL LINKS
+// Can be used by both students and mentors
+// =====================================================
+
+model SocialLink {
+  id       Int    @id @default(autoincrement())
+  userId   Int
+
+  platform String
+  url      String
+
+  user User @relation(
+    fields: [userId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  // Prevent duplicate platform entries for the same user
+  @@unique([userId, platform])
+  @@index([userId])
+}
+
+
+// =====================================================
+// REPORT
+// Existing reporting functionality
+// =====================================================
+
 model Report {
-  id             String   @id @default(uuid())
-  reporterId     String
-  reportedUserId String
+  id             Int      @id @default(autoincrement())
+  reporterId     Int
+  reportedUserId Int
+
   reason         String
   status         String   @default("OPEN")
+
   createdAt      DateTime @default(now())
-  reportedUser   User     @relation("ReportedUser", fields: [reportedUserId], references: [id])
+
+  reportedUser User @relation(
+    "ReportedUser",
+    fields: [reportedUserId],
+    references: [id]
+  )
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([status])
 }
