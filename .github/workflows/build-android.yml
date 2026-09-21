@@ -6,11 +6,6 @@ on:
       - main
       - master
   workflow_dispatch:
-    inputs:
-      build_apk:
-        description: 'Build APK (true/false)'
-        type: boolean
-        default: true
 
 concurrency:
   group: build-android-${{ github.ref }}
@@ -33,7 +28,6 @@ jobs:
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
       version_code: ${{ steps.bump.outputs.version_code }}
-      is_release: ${{ steps.check_release.outputs.is_release }}
 
     steps:
       - name: Checkout repository
@@ -42,27 +36,6 @@ jobs:
           ref: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-
-      - name: Check if commit requests a release
-        id: check_release
-        env:
-          COMMIT_MSG: ${{ github.event.head_commit.message }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if [ "${{ github.event.inputs.build_apk }}" = "true" ]; then
-              echo "is_release=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "is_release=false" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            if echo "$COMMIT_MSG" | grep -qi "\[release\]"; then
-              echo "Release tag [release] detected in commit message."
-              echo "is_release=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "No [release] tag detected. APK build will be skipped."
-              echo "is_release=false" >> "$GITHUB_OUTPUT"
-            fi
-          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -88,8 +61,6 @@ jobs:
   build-apk:
     name: Build Android APK
     needs: version-bump
-    # Only build APK if commit contained [release] or triggered manually
-    if: needs.version-bump.outputs.is_release == 'true'
     runs-on: ubuntu-latest
 
     steps:
