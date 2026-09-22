@@ -31,7 +31,7 @@ export const GET = withAuth<{ id: string }>(
 
 /**
  * Update profile details
- * @description Updates details of an existing profile by ID.
+ * @description Updates details of an existing profile by ID. Enforces ownership authorization.
  * @path profileParamsSchema
  * @body updateProfileSchema
  * @response 200:profileResponseSchema
@@ -40,24 +40,24 @@ export const GET = withAuth<{ id: string }>(
  * @openapi
  */
 export const PATCH = withAuth<{ id: string }>(
-  async (req: NextRequest, { params }) => {
+  async (req: NextRequest, { params, user }) => {
     const rawParams = await params;
     const { id } = profileParamsSchema.parse(rawParams);
 
     const body = await parseJsonBody(req, updateProfileSchema);
-    const updatedProfile = await ProfileService.updateProfile(id, body);
+    const updatedProfile = await ProfileService.updateProfile(id, body, user);
 
     return sendResponse(
       200,
       updatedProfile,
-      "Profile updated successfully (placeholder)."
+      "Profile updated successfully."
     );
   }
 );
 
 /**
  * Delete profile
- * @description Permanently deletes a profile by ID.
+ * @description Permanently deletes a profile by ID. Enforces ownership authorization.
  * @path profileParamsSchema
  * @response 200
  * @auth bearer
@@ -65,12 +65,12 @@ export const PATCH = withAuth<{ id: string }>(
  * @openapi
  */
 export const DELETE = withAuth<{ id: string }>(
-  async (_req: NextRequest, { params }) => {
+  async (_req: NextRequest, { params, user }) => {
     const rawParams = await params;
     const { id } = profileParamsSchema.parse(rawParams);
 
-    await ProfileService.deleteProfile(id);
+    await ProfileService.deleteProfile(id, user);
 
-    return sendResponse(200, null, `Profile '${id}' deleted successfully (placeholder).`);
+    return sendResponse(200, null, `Profile '${id}' deleted successfully.`);
   }
 );

@@ -141,3 +141,43 @@ export function withAuth<
     }
   };
 }
+
+/**
+ * Checks whether the current authenticated user is the owner of a resource or has an ADMIN role.
+ *
+ * @param resourceOwnerId The ID of the user who owns the resource.
+ * @param actor The authenticated user making the request.
+ * @returns boolean indicating if the actor is authorized.
+ */
+export function isOwnerOrAdmin(
+  resourceOwnerId: string | number | null | undefined,
+  actor: AuthUser
+): boolean {
+  if (!resourceOwnerId || !actor) {
+    return false;
+  }
+  // Admins always have full permissions across resources
+  if (actor.role === "ADMIN") {
+    return true;
+  }
+  return String(resourceOwnerId) === String(actor.id);
+}
+
+/**
+ * Asserts that the authenticated user owns the resource or has an ADMIN role.
+ * Throws a ForbiddenError (HTTP 403) if authorization check fails.
+ *
+ * @param resourceOwnerId The ID of the user who owns the resource.
+ * @param actor The authenticated user making the request.
+ * @param customMessage Optional custom error message.
+ * @throws ForbiddenError when the user does not have permission.
+ */
+export function assertOwnership(
+  resourceOwnerId: string | number | null | undefined,
+  actor: AuthUser,
+  customMessage = "Forbidden: You do not have permission to access or modify another account's resource."
+): void {
+  if (!isOwnerOrAdmin(resourceOwnerId, actor)) {
+    throw new ForbiddenError(customMessage);
+  }
+}

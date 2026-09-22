@@ -3,27 +3,32 @@ import type {
   UpdateProfileInput,
   Profile,
 } from "./profile.types";
+import { NotFoundError } from "@/lib/errors";
+import { assertOwnership, type AuthUser } from "@/lib/auth";
+
+// In-memory store for profile entities during runtime/development
+const profilesMap = new Map<string, Profile>();
 
 /**
- * Service handling profile domain logic.
- * (Placeholder boilerplate - to be connected to the database once schema is finalized)
+ * Service handling profile domain logic with strict entity ownership validation.
  */
 export class ProfileService {
   /**
-   * Retrieve a user profile by ID
+   * Retrieve a user profile by Profile ID
    */
   static async getProfileById(id: string): Promise<Profile | null> {
-    // TODO: Implement database lookup (e.g., prisma.profile.findUnique)
-    console.log(`[ProfileService.getProfileById] fetching profile ${id} (placeholder)`);
-    return null;
+    return profilesMap.get(id) || null;
   }
 
   /**
    * Retrieve a user profile by User ID
    */
   static async getProfileByUserId(userId: string): Promise<Profile | null> {
-    // TODO: Implement database lookup (e.g., prisma.profile.findUnique({ where: { userId } }))
-    console.log(`[ProfileService.getProfileByUserId] fetching profile for user ${userId} (placeholder)`);
+    for (const profile of profilesMap.values()) {
+      if (profile.userId === userId) {
+        return profile;
+      }
+    }
     return null;
   }
 
@@ -31,47 +36,90 @@ export class ProfileService {
    * Create a new profile
    */
   static async createProfile(data: CreateProfileInput): Promise<Profile> {
-    // TODO: Implement database insertion (e.g., prisma.profile.create)
-    console.log("[ProfileService.createProfile] data received:", data);
-    return {
-      id: "placeholder-profile-id",
+    const id = `prof_${Math.random().toString(36).substring(2, 9)}`;
+    const now = new Date().toISOString();
+
+    const profile: Profile = {
+      id,
       userId: data.userId,
       displayName: data.displayName,
       bio: data.bio,
       avatarUrl: data.avatarUrl,
       phoneNumber: data.phoneNumber,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
+
+    profilesMap.set(id, profile);
+    return profile;
   }
 
   /**
-   * Update an existing profile
+   * Update an existing profile details.
+   * Enforces that the actor owns the target profile entity or has an ADMIN role.
+   *
+   * @param id Profile ID to update
+   * @param data Fields to update
+   * @param actor The authenticated user requesting the update
+   * @throws NotFoundError when the profile does not exist
+   * @throws ForbiddenError when an unauthorized user attempts to update another account's profile
    */
   static async updateProfile(
     id: string,
-    data: UpdateProfileInput
+    data: UpdateProfileInput,
+    actor?: AuthUser
   ): Promise<Profile> {
-    // TODO: Implement database update (e.g., prisma.profile.update)
-    console.log(`[ProfileService.updateProfile] updating profile ${id}:`, data);
-    return {
-      id,
-      userId: "placeholder-user-id",
-      displayName: data.displayName ?? "Placeholder Name",
-      bio: data.bio,
-      avatarUrl: data.avatarUrl,
-      phoneNumber: data.phoneNumber,
-      createdAt: new Date().toISOString(),
+    const existing = await this.getProfileById(id);
+
+    if (!existing) {
+      throw new NotFoundError(`Profile with ID '${id}' not found.`);
+    }
+
+    // Authorization Guard: verify that the actor is the owner or an ADMIN
+    if (actor) {
+      assertOwnership(
+        existing.userId,
+        actor,
+        "Forbidden: You do not have permission to update another account's profile."
+      );
+    }
+
+    const updated: Profile = {
+      ...existing,
+      ...data,
+      displayName: data.displayName ?? existing.displayName,
       updatedAt: new Date().toISOString(),
     };
+
+    profilesMap.set(id, updated);
+    return updated;
   }
 
   /**
-   * Delete a profile by ID
+   * Delete a profile by ID.
+   * Enforces that the actor owns the target profile entity or has an ADMIN role.
+   *
+   * @param id Profile ID to delete
+   * @param actor The authenticated user requesting deletion
+   * @throws NotFoundError when the profile does not exist
+   * @throws ForbiddenError when an unauthorized user attempts to delete another account's profile
    */
-  static async deleteProfile(id: string): Promise<boolean> {
-    // TODO: Implement database deletion (e.g., prisma.profile.delete)
-    console.log(`[ProfileService.deleteProfile] deleting profile ${id}`);
-    return true;
+  static async deleteProfile(id: string, actor?: AuthUser): Promise<boolean> {
+    const existing = await this.getProfileById(id);
+
+    if (!existing) {
+      throw new NotFoundError(`Profile with ID '${id}' not found.`);
+    }
+
+    // Authorization Guard: verify that the actor is the owner or an ADMIN
+    if (actor) {
+      assertOwnership(
+        existing.userId,
+        actor,
+        "Forbidden: You do not have permission to delete another account's profile."
+      );
+    }
+
+    return profilesMap.delete(id);
   }
 }
