@@ -6,8 +6,12 @@ import { createProfileSchema } from "@/modules/profile/profile.schema";
 import { ProfileService } from "@/modules/profile/profile.service";
 
 /**
- * GET /api/profile
- * Retrieve profile information for the authenticated user
+ * Get current user profile
+ * @description Retrieves profile information for the authenticated user.
+ * @response 200:profileResponseSchema
+ * @auth bearer
+ * @responseSet auth
+ * @openapi
  */
 export const GET = withAuth(async (_req: NextRequest, { user }) => {
   const profile = await ProfileService.getProfileByUserId(user.id);
@@ -29,8 +33,13 @@ export const GET = withAuth(async (_req: NextRequest, { user }) => {
 });
 
 /**
- * POST /api/profile
- * Create a new user profile for the authenticated user
+ * Create user profile
+ * @description Creates a new user profile for the authenticated user.
+ * @body createProfileSchema
+ * @response 201:profileResponseSchema
+ * @auth bearer
+ * @responseSet auth
+ * @openapi
  */
 export const POST = withAuth(async (req: NextRequest, { user }) => {
   const body = await parseJsonBody(req, createProfileSchema);

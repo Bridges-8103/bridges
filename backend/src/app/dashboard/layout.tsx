@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
+import DashboardFooter from '@/components/layout/DashboardFooter';
 
 export default function DashboardLayout({
   children,
@@ -56,6 +57,9 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-y-auto p-8">
           {children}
         </main>
+
+        {/* Development Footer for extracting Bearer token */}
+        {process.env.NODE_ENV === 'development' && <DashboardFooter />}
       </div>
     </div>
   );

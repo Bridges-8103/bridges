@@ -1,5 +1,6 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth as useClerkAuth, useUser as useClerkUser } from '@clerk/expo';
+import { setAuthTokenGetter } from '@/services/api';
 
 export type AuthUser = {
   id: string;
@@ -22,8 +23,16 @@ const DEFAULT_AVATAR =
   'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn, signOut } = useClerkAuth();
+  const { isLoaded, isSignedIn, signOut, getToken } = useClerkAuth();
   const { user: clerkUser } = useClerkUser();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      setAuthTokenGetter(getToken);
+    } else {
+      setAuthTokenGetter(null);
+    }
+  }, [isSignedIn, getToken]);
 
   const user: AuthUser | null = isSignedIn
     ? {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@clerk/nextjs/server";
 import { UnauthorizedError, ForbiddenError } from "./errors";
 import { verifyJwt } from "./jwt";
 import { handleApiError } from "./apiHandler";
@@ -54,15 +55,34 @@ export async function getAuthUser(req: NextRequest): Promise<AuthUser | null> {
     return null;
   }
 
+  // 2a. Try Clerk token verification
   try {
-    const payload = await verifyJwt(token);
+    const clerkPayload = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+    });
+    const claims = clerkPayload as Record<string, unknown>;
     return {
-      id: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      id: clerkPayload.sub,
+      email:
+        typeof claims.email === "string"
+          ? claims.email
+          : typeof claims.primary_email === "string"
+          ? claims.primary_email
+          : `${clerkPayload.sub}@clerk.user`,
+      role: typeof claims.role === "string" ? claims.role : undefined,
     };
   } catch {
-    return null;
+    // 2b. Fallback: verify backend HS256 JWT
+    try {
+      const payload = await verifyJwt(token);
+      return {
+        id: payload.sub,
+        email: payload.email,
+        role: payload.role,
+      };
+    } catch {
+      return null;
+    }
   }
 }
 

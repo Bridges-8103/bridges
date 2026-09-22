@@ -1,4 +1,4 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher, verifyToken } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyJwt } from "@/lib/jwt";
 import { sendResponse } from "@/lib/sendResponse";
@@ -9,8 +9,9 @@ const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
  * Public routes that do not require authentication tokens.
  */
 const PUBLIC_API_PATHS = [
+  "/api-docs",
+  "/openapi.json",
   "/api/health",
-  "/api/auth/login",
   "/api/auth/register",
   "/api/auth/refresh",
 ];
@@ -88,33 +89,57 @@ async function handleApiProxy(req: NextRequest): Promise<NextResponse> {
     return applyCorsHeaders(unauthorized, origin);
   }
 
+  let userId: string;
+  let email = "";
+  let role: string | undefined;
+
+  // 1. Primary: Verify as Clerk RS256 token (used by mobile app and dashboard)
   try {
-    const payload = await verifyJwt(token);
-
-    // Forward verified user identity downstream to route handlers via internal headers
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-user-id", payload.sub);
-    requestHeaders.set("x-user-email", payload.email);
-    if (payload.role) {
-      requestHeaders.set("x-user-role", payload.role);
-    }
-
-    const response = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
+    const clerkPayload = await verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
     });
-
-    return applyCorsHeaders(response, origin);
-  } catch (error) {
-    const unauthorized = sendResponse(
-      401,
-      null,
-      "Unauthorized: Token is invalid or expired.",
-      error instanceof Error ? error.message : undefined
-    );
-    return applyCorsHeaders(unauthorized, origin);
+    userId = clerkPayload.sub;
+    const claims = clerkPayload as Record<string, unknown>;
+    email =
+      typeof claims.email === "string"
+        ? claims.email
+        : typeof claims.primary_email === "string"
+        ? claims.primary_email
+        : `${userId}@clerk.user`;
+    role = typeof claims.role === "string" ? claims.role : undefined;
+  } catch {
+    // 2. Fallback: Verify as backend HS256 JWT
+    try {
+      const payload = await verifyJwt(token);
+      userId = payload.sub;
+      email = payload.email;
+      role = payload.role;
+    } catch (error) {
+      const unauthorized = sendResponse(
+        401,
+        null,
+        "Unauthorized: Token is invalid or expired.",
+        error instanceof Error ? error.message : undefined
+      );
+      return applyCorsHeaders(unauthorized, origin);
+    }
   }
+
+  // Forward verified user identity downstream to route handlers via internal headers
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-user-id", userId);
+  requestHeaders.set("x-user-email", email);
+  if (role) {
+    requestHeaders.set("x-user-role", role);
+  }
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  return applyCorsHeaders(response, origin);
 }
 
 export default clerkMiddleware(async (auth, req) => {
@@ -123,7 +148,7 @@ export default clerkMiddleware(async (auth, req) => {
     return;
   }
 
-  if (req.nextUrl.pathname.startsWith("/api")) {
+  if (req.nextUrl.pathname.startsWith("/api/")) {
     return handleApiProxy(req);
   }
 });

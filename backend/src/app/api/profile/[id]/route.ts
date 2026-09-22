@@ -6,8 +6,13 @@ import { updateProfileSchema, profileParamsSchema } from "@/modules/profile/prof
 import { ProfileService } from "@/modules/profile/profile.service";
 
 /**
- * GET /api/profile/[id]
  * Fetch profile by ID
+ * @description Retrieves a specific profile by its unique ID.
+ * @path profileParamsSchema
+ * @response 200:profileResponseSchema
+ * @auth bearer
+ * @responseSet item
+ * @openapi
  */
 export const GET = withAuth<{ id: string }>(
   async (_req: NextRequest, { params }) => {
@@ -25,8 +30,14 @@ export const GET = withAuth<{ id: string }>(
 );
 
 /**
- * PATCH /api/profile/[id]
  * Update profile details
+ * @description Updates details of an existing profile by ID.
+ * @path profileParamsSchema
+ * @body updateProfileSchema
+ * @response 200:profileResponseSchema
+ * @auth bearer
+ * @responseSet item
+ * @openapi
  */
 export const PATCH = withAuth<{ id: string }>(
   async (req: NextRequest, { params }) => {
@@ -45,8 +56,13 @@ export const PATCH = withAuth<{ id: string }>(
 );
 
 /**
- * DELETE /api/profile/[id]
  * Delete profile
+ * @description Permanently deletes a profile by ID.
+ * @path profileParamsSchema
+ * @response 200
+ * @auth bearer
+ * @responseSet item
+ * @openapi
  */
 export const DELETE = withAuth<{ id: string }>(
   async (_req: NextRequest, { params }) => {

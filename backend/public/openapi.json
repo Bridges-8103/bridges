@@ -1,0 +1,1037 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Bridges API",
+    "version": "1.0.0",
+    "description": "OpenAPI 3.0 specification for Bridges backend services."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/api",
+      "description": "Local development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Bearer token acquired from /api/auth/login"
+      }
+    },
+    "schemas": {
+      "AuthMeData": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AuthUser"
+          }
+        },
+        "required": [
+          "user"
+        ]
+      },
+      "AuthMeResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthMeData"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ],
+        "example": {
+          "status": 200,
+          "data": {
+            "user": {
+              "id": "usr_abc123",
+              "email": "user@example.com",
+              "role": "USER"
+            }
+          },
+          "message": "Current user session retrieved successfully."
+        }
+      },
+      "authMeResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AuthMeData"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ],
+        "example": {
+          "status": 200,
+          "data": {
+            "user": {
+              "id": "usr_abc123",
+              "email": "user@example.com",
+              "role": "USER"
+            }
+          },
+          "message": "Current user session retrieved successfully."
+        }
+      },
+      "AuthUser": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User identifier"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "role": {
+            "type": "string",
+            "description": "User role (e.g. USER, ADMIN)"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role"
+        ]
+      },
+      "CreateProfileInput": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Associated user ID"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "Public display name"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 250,
+            "description": "User biography"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Avatar image URL"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Contact phone number"
+          }
+        },
+        "required": [
+          "userId",
+          "displayName"
+        ],
+        "example": {
+          "userId": "usr_abc123",
+          "displayName": "Jane Doe",
+          "bio": "Software developer and open source enthusiast.",
+          "avatarUrl": "https://example.com/avatars/janedoe.png",
+          "phoneNumber": "+1234567890"
+        }
+      },
+      "createProfileSchema": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Associated user ID"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "Public display name"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 250,
+            "description": "User biography"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Avatar image URL"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Contact phone number"
+          }
+        },
+        "required": [
+          "userId",
+          "displayName"
+        ],
+        "example": {
+          "userId": "usr_abc123",
+          "displayName": "Jane Doe",
+          "bio": "Software developer and open source enthusiast.",
+          "avatarUrl": "https://example.com/avatars/janedoe.png",
+          "phoneNumber": "+1234567890"
+        }
+      },
+      "HealthData": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Health status (e.g., 'healthy')"
+          },
+          "database": {
+            "type": "string",
+            "description": "Database connection status (e.g., 'connected')"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO timestamp of the health check"
+          }
+        },
+        "required": [
+          "status",
+          "database",
+          "timestamp"
+        ]
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "HTTP status code"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HealthData"
+          },
+          "message": {
+            "type": "string",
+            "description": "Status message"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ],
+        "example": {
+          "status": 200,
+          "data": {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": "2026-09-22T00:00:00.000Z"
+          },
+          "message": "API and database are healthy."
+        }
+      },
+      "healthResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number",
+            "description": "HTTP status code"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HealthData"
+          },
+          "message": {
+            "type": "string",
+            "description": "Status message"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ],
+        "example": {
+          "status": 200,
+          "data": {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": "2026-09-22T00:00:00.000Z"
+          },
+          "message": "API and database are healthy."
+        }
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique profile ID"
+          },
+          "userId": {
+            "type": "string",
+            "description": "Associated user ID"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Public display name"
+          },
+          "bio": {
+            "type": "string",
+            "description": "User biography"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "description": "Avatar image URL"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Contact phone number"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "Last updated timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "displayName",
+          "createdAt",
+          "updatedAt"
+        ],
+        "example": {
+          "id": "prof_12345",
+          "userId": "usr_abc123",
+          "displayName": "Jane Doe",
+          "bio": "Software developer and open source enthusiast.",
+          "avatarUrl": "https://example.com/avatars/janedoe.png",
+          "phoneNumber": "+1234567890",
+          "createdAt": "2026-09-22T00:00:00.000Z",
+          "updatedAt": "2026-09-22T00:00:00.000Z"
+        }
+      },
+      "ProfileParams": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Profile ID"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "example": {
+          "id": "prof_12345"
+        }
+      },
+      "profileParamsSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Profile ID"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "example": {
+          "id": "prof_12345"
+        }
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Profile",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ],
+        "example": {
+          "status": 200,
+          "data": {
+            "id": "prof_12345",
+            "userId": "usr_abc123",
+            "displayName": "Jane Doe",
+            "bio": "Software developer and open source enthusiast.",
+            "avatarUrl": "https://example.com/avatars/janedoe.png",
+            "phoneNumber": "+1234567890",
+            "createdAt": "2026-09-22T00:00:00.000Z",
+            "updatedAt": "2026-09-22T00:00:00.000Z"
+          },
+          "message": "Profile retrieved successfully."
+        }
+      },
+      "profileResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "$ref": "#/components/schemas/Profile",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ],
+        "example": {
+          "status": 200,
+          "data": {
+            "id": "prof_12345",
+            "userId": "usr_abc123",
+            "displayName": "Jane Doe",
+            "bio": "Software developer and open source enthusiast.",
+            "avatarUrl": "https://example.com/avatars/janedoe.png",
+            "phoneNumber": "+1234567890",
+            "createdAt": "2026-09-22T00:00:00.000Z",
+            "updatedAt": "2026-09-22T00:00:00.000Z"
+          },
+          "message": "Profile retrieved successfully."
+        }
+      },
+      "UpdateProfileInput": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "Public display name"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 250,
+            "description": "User biography"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Avatar image URL"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Contact phone number"
+          }
+        },
+        "example": {
+          "displayName": "Jane Doe (Updated)",
+          "bio": "Updated biography text."
+        }
+      },
+      "updateProfileSchema": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "Public display name"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 250,
+            "description": "User biography"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Avatar image URL"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Contact phone number"
+          }
+        },
+        "example": {
+          "displayName": "Jane Doe (Updated)",
+          "bio": "Updated biography text."
+        }
+      }
+    },
+    "responses": {
+      "400": {
+        "description": "Bad Request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true,
+                  "example": null
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Invalid request parameters or body"
+                },
+                "errors": {
+                  "type": "string",
+                  "example": "400"
+                }
+              },
+              "required": [
+                "status",
+                "data",
+                "message"
+              ]
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true,
+                  "example": null
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Authentication required or token expired"
+                },
+                "errors": {
+                  "type": "string",
+                  "example": "401"
+                }
+              },
+              "required": [
+                "status",
+                "data",
+                "message"
+              ]
+            }
+          }
+        }
+      },
+      "403": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true,
+                  "example": null
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Access denied: insufficient permissions"
+                },
+                "errors": {
+                  "type": "string",
+                  "example": "403"
+                }
+              },
+              "required": [
+                "status",
+                "data",
+                "message"
+              ]
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Not Found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true,
+                  "example": null
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Resource not found"
+                },
+                "errors": {
+                  "type": "string",
+                  "example": "404"
+                }
+              },
+              "required": [
+                "status",
+                "data",
+                "message"
+              ]
+            }
+          }
+        }
+      },
+      "409": {
+        "description": "Conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true,
+                  "example": null
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Resource already exists"
+                },
+                "errors": {
+                  "type": "string",
+                  "example": "409"
+                }
+              },
+              "required": [
+                "status",
+                "data",
+                "message"
+              ]
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 400
+                },
+                "data": {
+                  "type": "null",
+                  "nullable": true,
+                  "example": null
+                },
+                "message": {
+                  "type": "string",
+                  "example": "An unexpected internal server error occurred"
+                },
+                "errors": {
+                  "type": "string",
+                  "example": "500"
+                }
+              },
+              "required": [
+                "status",
+                "data",
+                "message"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/me": {
+      "get": {
+        "operationId": "get-auth-me",
+        "summary": "Current user session",
+        "description": "Returns the claims of the currently authenticated user.",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthMeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "get-health",
+        "summary": "System health check",
+        "description": "Verifies API and database availability.",
+        "tags": [
+          "Health"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "operationId": "get-profile",
+        "summary": "Get current user profile",
+        "description": "Retrieves profile information for the authenticated user.",
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-profile",
+        "summary": "Create user profile",
+        "description": "Creates a new user profile for the authenticated user.",
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProfileInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/profile/{id}": {
+      "get": {
+        "operationId": "get-profile-{id}",
+        "summary": "Fetch profile by ID",
+        "description": "Retrieves a specific profile by its unique ID.",
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Profile ID"
+            },
+            "description": "Profile ID",
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "patch-profile-{id}",
+        "summary": "Update profile details",
+        "description": "Updates details of an existing profile by ID.",
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Profile ID"
+            },
+            "description": "Profile ID",
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-profile-{id}",
+        "summary": "Delete profile",
+        "description": "Permanently deletes a profile by ID.",
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Profile ID"
+            },
+            "description": "Profile ID",
+            "example": "123"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Profile"
+    }
+  ]
+}
