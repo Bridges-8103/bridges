@@ -163,10 +163,13 @@ Maintain a strict boundary between general utilities and domain/infrastructure l
   });
   ```
 
-### Scalable State Management
-- Prefer lightweight, scalable stores such as **Zustand** to eliminate deep prop drilling.
+### Scalable State Management & Data Fetching (TanStack Query)
+- **MANDATORY for App / Client Data Fetching**: Always use **TanStack Query (`@tanstack/react-query`)** for all server state fetching, caching, synchronization, and mutations in client and mobile code (`app/`).
+- **NO Raw `useEffect` Fetching**: Never use `useEffect` + manual `useState` (`data`, `isLoading`, `error`) to fetch remote server data.
+- **Client Stores for Client State Only**: Prefer lightweight stores such as **Zustand** (or Context) strictly for client-only UI state (e.g. modals, transient form inputs, theme). Never duplicate or store server cache in client stores.
+- **Services Architecture (`src/services/<entity>/`)**: In `app/`, organize all API calls, query keys, and hooks into `services/<entity>/` (`types.ts`, `keys.ts`, `api.ts`, `queries.ts`, `mutations.ts`, `index.ts`). See `app/AGENTS.md` for full blueprint.
 - Isolate state stores under `src/stores/` (e.g., `stores/authStore.ts`, `stores/cartStore.ts`).
-- Avoid storing server cache data in client stores; use React Server Components and Next.js caching where applicable.
+- Avoid storing server cache data in client stores; use React Server Components and Next.js caching on the backend, and TanStack Query on the app side.
 
 ### Incremental Static Regeneration (ISR) & Caching
 - Use Next.js ISR (`export const revalidate = <seconds>`) for content-heavy pages to combine the speed of static delivery with periodic data freshness:
@@ -207,3 +210,5 @@ Maintain a strict boundary between general utilities and domain/infrastructure l
 - ❌ **Blurring `utils/` and `lib/`**: Placing database queries or API fetchers into `utils/`, or pure string formatters into `lib/`.
 - ❌ **Excessive Prop Drilling**: Passing callbacks and state through numerous component layers instead of using Zustand stores or component composition.
 - ❌ **Bloated Initial Bundles**: Importing heavy third-party visualization or editor components statically on main landing pages without dynamic imports.
+- ❌ **Manual Remote State in `useEffect`**: Hand-rolling `useState` + `useEffect` fetchers instead of using TanStack Query (`@tanstack/react-query`).
+- ❌ **Server Cache in Client Stores**: Duplicating or managing API response caches inside Zustand or React Context instead of TanStack Query.
