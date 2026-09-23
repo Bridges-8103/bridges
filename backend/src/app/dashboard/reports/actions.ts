@@ -3,10 +3,15 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function resolveReport(reportId: string, action: 'DISMISS' | 'SUSPEND') {
+export async function resolveReport(reportId: number | string, action: 'DISMISS' | 'SUSPEND') {
   try {
+    const id = typeof reportId === 'string' ? parseInt(reportId, 10) : reportId;
+    if (isNaN(id)) {
+      return { success: false, error: 'Invalid report ID' };
+    }
+
     const report = await prisma.report.findUnique({
-      where: { id: reportId },
+      where: { id },
     });
 
     if (!report) return { success: false, error: 'Report not found' };
@@ -19,7 +24,7 @@ export async function resolveReport(reportId: string, action: 'DISMISS' | 'SUSPE
     }
 
     await prisma.report.update({
-      where: { id: reportId },
+      where: { id },
       data: { status: action === 'SUSPEND' ? 'RESOLVED_SUSPENDED' : 'DISMISSED' },
     });
 
