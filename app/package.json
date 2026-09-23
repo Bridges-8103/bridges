@@ -1,7 +1,7 @@
 {
   "name": "app",
   "main": "expo-router/entry",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "dependencies": {
     "@clerk/expo": "^4.6.8",
     "@expo/ui": "~57.0.17",
