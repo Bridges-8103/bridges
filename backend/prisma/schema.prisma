@@ -8,11 +8,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
-// =====================================================
-// ENUMS
-// =====================================================
-
 enum Role {
   STUDENT
   MENTOR
@@ -25,12 +20,6 @@ enum VerificationStatus {
   REJECTED
 }
 
-
-// =====================================================
-// USER
-// Common information for all users
-// =====================================================
-
 model User {
   id                 Int                @id @default(autoincrement())
   name               String
@@ -39,132 +28,86 @@ model User {
   isSuspended        Boolean            @default(false)
   verificationStatus VerificationStatus @default(PENDING)
 
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Role-specific profile
-  studentDetail      StudentDetail?
-  mentorDetail       MentorDetail?
+  // Role-specific information
+  studentDetail StudentDetail?
+  mentorDetail  MentorDetail?
 
-  // Available to both students and mentors
-  socialLinks        SocialLink[]
-
-  // Reports
-  reportsReceived    Report[]           @relation("ReportedUser")
+  reportsReceived Report[] @relation("ReportedUser")
 
   @@index([role])
   @@index([verificationStatus])
 }
 
-
-// =====================================================
-// STUDENT DETAILS
-// Student-specific profile information
-// =====================================================
+// ==========================================
+// STUDENT-SPECIFIC INFORMATION
+// ==========================================
 
 model StudentDetail {
-  id           Int      @id @default(autoincrement())
-  userId       Int      @unique
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   university   String?
   degree       String?
   fieldOfStudy String?
   yearOfStudy  Int?
 
-  interests    String[]
-  skills       String[]
-  careerGoals  String?
+  interests   String[]
+  skills      String[]
+  careerGoals String?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([university])
   @@index([fieldOfStudy])
 }
 
-
-// =====================================================
-// MENTOR DETAILS
-// Mentor-specific professional information
-// =====================================================
+// ==========================================
+// MENTOR-SPECIFIC INFORMATION
+// ==========================================
 
 model MentorDetail {
-  id                 Int      @id @default(autoincrement())
-  userId             Int      @unique
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  jobTitle           String?
-  company            String?
-  industry           String?
-  yearsExperience    Int?
+  jobTitle        String?
+  company         String?
+  industry        String?
+  yearsExperience Int?
 
   expertise          String[]
   preferredEnquiries String[]
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  linkedinUrl String?
 
-  user User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([industry])
 }
 
-
-// =====================================================
-// SOCIAL LINKS
-// Can be used by both students and mentors
-// =====================================================
-
-model SocialLink {
-  id       Int    @id @default(autoincrement())
-  userId   Int
-
-  platform String
-  url      String
-
-  user User @relation(
-    fields: [userId],
-    references: [id],
-    onDelete: Cascade
-  )
-
-  // Prevent duplicate platform entries for the same user
-  @@unique([userId, platform])
-  @@index([userId])
-}
-
-
-// =====================================================
+// ==========================================
 // REPORT
-// Existing reporting functionality
-// =====================================================
+// ==========================================
 
 model Report {
-  id             Int      @id @default(autoincrement())
+  id             Int @id @default(autoincrement())
   reporterId     Int
   reportedUserId Int
 
-  reason         String
-  status         String   @default("OPEN")
+  reason String
+  status String @default("OPEN")
 
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  reportedUser User @relation(
-    "ReportedUser",
-    fields: [reportedUserId],
-    references: [id]
-  )
+  reportedUser User @relation("ReportedUser", fields: [reportedUserId], references: [id])
 
-  @@index([reporterId])
   @@index([reportedUserId])
+  @@index([reporterId])
   @@index([status])
 }

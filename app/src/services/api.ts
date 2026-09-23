@@ -11,10 +11,25 @@ export const setAuthTokenGetter = (getter: TokenGetter | null) => {
   authTokenGetter = getter;
 };
 
+const resolveApiBaseUrl = (): string => {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (!envUrl) {
+    return 'http://localhost:3001';
+  }
+  if (envUrl.includes('localhost:3000') || envUrl.includes('127.0.0.1:3000')) {
+    console.warn(
+      `[api] EXPO_PUBLIC_API_URL is configured to port 3000 (${envUrl}), but Bridges backend runs on port 3001. Redirecting to port 3001.`
+    );
+    return envUrl.replace(':3000', ':3001');
+  }
+  return envUrl;
+};
+
 // eslint-disable-next-line import/no-named-as-default-member
 export const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  baseURL: resolveApiBaseUrl(),
 });
+
 
 // Automatically inject Clerk Bearer token into outgoing requests when available
 api.interceptors.request.use(async (config) => {
