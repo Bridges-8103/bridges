@@ -3,17 +3,23 @@ import { createProfile, updateProfile } from './api';
 import { profileKeys } from './keys';
 import { CreateProfileInput, UpdateProfileInput, UserProfile } from './types';
 
+/** Variables for an update: the backend patches by profile ID. */
+export interface UpdateProfileVariables {
+  id: string;
+  input: UpdateProfileInput;
+}
+
 /**
- * Example useMutation Hook: Update profile with TanStack Query and axios
+ * Update the authenticated user's profile, then refresh the cached copy.
  */
 export function useUpdateProfileMutation(
-  options?: UseMutationOptions<UserProfile, Error, UpdateProfileInput>
+  options?: UseMutationOptions<UserProfile | null, Error, UpdateProfileVariables>
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     ...options,
-    mutationFn: updateProfile,
+    mutationFn: ({ id, input }: UpdateProfileVariables) => updateProfile(id, input),
     onSuccess: async (...args) => {
       await queryClient.invalidateQueries({ queryKey: profileKeys.current() });
       await options?.onSuccess?.(...args);
@@ -22,10 +28,10 @@ export function useUpdateProfileMutation(
 }
 
 /**
- * Example useMutation Hook: Create profile with TanStack Query and axios
+ * Create a profile for the authenticated user, then refresh the cached copy.
  */
 export function useCreateProfileMutation(
-  options?: UseMutationOptions<UserProfile, Error, CreateProfileInput>
+  options?: UseMutationOptions<UserProfile | null, Error, CreateProfileInput>
 ) {
   const queryClient = useQueryClient();
 
