@@ -19,8 +19,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEFAULT_AVATAR =
-  'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, signOut, getToken } = useClerkAuth();
@@ -42,9 +40,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           clerkUser?.firstName ||
           clerkUser?.username ||
           clerkUser?.primaryEmailAddress?.emailAddress?.split('@')[0] ||
-          'Jamie Chen',
-        email: clerkUser?.primaryEmailAddress?.emailAddress || 'student@university.edu',
-        avatarUri: clerkUser?.imageUrl || DEFAULT_AVATAR,
+          '',
+        email: clerkUser?.primaryEmailAddress?.emailAddress || '',
+        avatarUri: clerkUser?.imageUrl,
         role: 'STUDENT',
       }
     : null;

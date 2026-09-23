@@ -1,6 +1,7 @@
 import { SymbolView } from 'expo-symbols';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChipToggle } from '@/components/mentor-profile/chip-toggle';
@@ -14,14 +15,33 @@ import { SelectField } from '@/components/mentor-profile/select-field';
 import { SocialLinkInput } from '@/components/mentor-profile/social-link-input';
 import { ThemedText } from '@/components/themed-text';
 import { MAJOR_OPTIONS, mockMentorProfile, YEAR_OPTIONS } from '@/data/mock-mentor-profile';
+import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
+import {
+  useCreateProfileMutation,
+  useUpdateProfileMutation,
+} from '@/services/profile/mutations';
+import { useProfileQuery } from '@/services/profile/queries';
 import type { SocialLinks, Tag } from '@/types/mentor-profile';
 
 const BIO_MAX_LENGTH = 200;
 
 export default function MentorProfileScreen() {
-  const [fullName, setFullName] = useState(mockMentorProfile.fullName);
-  const [bio, setBio] = useState(mockMentorProfile.bio);
+  const router = useRouter();
+  const { user } = useAuth();
+  const { data: profile, isPending: isLoadingProfile } = useProfileQuery();
+  const createProfile = useCreateProfileMutation();
+  const updateProfile = useUpdateProfileMutation();
+
+  // Drafts stay null until the user types, so the saved profile (or Clerk)
+  // supplies the displayed value without an effect seeding state.
+  const [fullNameDraft, setFullNameDraft] = useState<string | null>(null);
+  const [bioDraft, setBioDraft] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Fields below are not yet part of the backend Profile contract
+  // (displayName / bio / avatarUrl / phoneNumber). They stay local until the
+  // schema grows MentorDetail / StudentDetail support.
   const [university, setUniversity] = useState(mockMentorProfile.university);
   const [year, setYear] = useState(mockMentorProfile.year);
   const [major, setMajor] = useState(mockMentorProfile.major);
@@ -30,6 +50,47 @@ export default function MentorProfileScreen() {
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(mockMentorProfile.socialLinks);
 
   const theme = useTheme();
+  const isSaving = createProfile.isPending || updateProfile.isPending;
+  const avatarUri = profile?.avatarUrl ?? user?.avatarUri;
+  const fullName = fullNameDraft ?? profile?.displayName ?? user?.name ?? '';
+  const bio = bioDraft ?? profile?.bio ?? '';
+
+  const handleSave = async () => {
+    const displayName = fullName.trim();
+    setSaveError(null);
+
+    if (displayName.length < 2) {
+      setSaveError('Please enter a name of at least 2 characters.');
+      return;
+    }
+
+    try {
+      if (profile) {
+        await updateProfile.mutateAsync({
+          id: profile.id,
+          input: { displayName, bio: bio.trim() || undefined },
+        });
+      } else {
+        await createProfile.mutateAsync({
+          userId: user?.id ?? '',
+          displayName,
+          bio: bio.trim() || undefined,
+          avatarUrl: user?.avatarUri,
+        });
+      }
+      router.replace('/(tabs)/profile');
+    } catch (error) {
+      // Alert.alert is a no-op on react-native-web, so surface errors inline.
+      const response = (error as { response?: { status?: number; data?: { message?: string } } })
+        .response;
+      const detail = response?.data?.message;
+      const status = response?.status;
+      const message =
+        detail ??
+        (error instanceof Error ? error.message : 'Something went wrong. Please try again.');
+      setSaveError(status ? `${status}: ${message}` : message);
+    }
+  };
 
   const toggleTag = (list: Tag[], setList: (tags: Tag[]) => void, id: string) => {
     setList(list.map((tag) => (tag.id === id ? { ...tag, selected: !tag.selected } : tag)));
@@ -65,14 +126,14 @@ export default function MentorProfileScreen() {
           </ThemedText>
         </View>
 
-        <ProfileAvatar uri={mockMentorProfile.avatarUri} />
+        <ProfileAvatar uri={avatarUri ?? mockMentorProfile.avatarUri} />
 
         <SectionCard title="Basic Info">
-          <LabeledInput label="Full Name" value={fullName} onChangeText={setFullName} />
+          <LabeledInput label="Full Name" value={fullName} onChangeText={setFullNameDraft} />
           <LabeledTextarea
             label="Bio"
             value={bio}
-            onChangeText={setBio}
+            onChangeText={setBioDraft}
             maxLength={BIO_MAX_LENGTH}
           />
         </SectionCard>
@@ -149,7 +210,21 @@ export default function MentorProfileScreen() {
           />
         </SectionCard>
 
-        <PrimaryButton label="Finish Setup" onPress={() => {}} />
+        {saveError ? (
+          <View style={styles.errorBox}>
+            <ThemedText style={styles.errorText}>{saveError}</ThemedText>
+          </View>
+        ) : null}
+
+        {isLoadingProfile ? (
+          <ActivityIndicator color={theme.primary} style={styles.loader} />
+        ) : (
+          <PrimaryButton
+            label={isSaving ? 'Saving…' : 'Finish Setup'}
+            loading={isSaving}
+            onPress={handleSave}
+          />
+        )}
       </ScrollView>
     </View>
   );
@@ -197,5 +272,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  loader: {
+    paddingVertical: 16,
+  },
+  errorBox: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#B91C1C',
+    fontSize: 13,
   },
 });
