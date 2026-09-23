@@ -36,31 +36,51 @@ const DEFAULT_STUDENT_SKILLS: Tag[] = [
   { id: 'react', label: 'React', selected: true },
   { id: 'typescript', label: 'TypeScript', selected: true },
   { id: 'python', label: 'Python', selected: true },
+  { id: 'react-native', label: 'React Native', selected: false },
+  { id: 'java', label: 'Java', selected: false },
+  { id: 'c-plus-plus', label: 'C++', selected: false },
+  { id: 'swift', label: 'Swift & iOS', selected: false },
   { id: 'machine-learning', label: 'Machine Learning', selected: false },
+  { id: 'ai-engineering', label: 'AI Engineering', selected: false },
   { id: 'data-analysis', label: 'Data Analysis', selected: false },
+  { id: 'sql-databases', label: 'SQL & Databases', selected: false },
+  { id: 'cloud-devops', label: 'Cloud & DevOps', selected: false },
   { id: 'system-design', label: 'System Design', selected: false },
   { id: 'product-management', label: 'Product Management', selected: false },
-  { id: 'ux-research', label: 'UX Research', selected: false },
+  { id: 'ui-ux-design', label: 'UI/UX Design', selected: false },
+  { id: 'cybersecurity', label: 'Cybersecurity', selected: false },
+  { id: 'public-speaking', label: 'Public Speaking', selected: false },
 ];
 
 const DEFAULT_INTERESTS: Tag[] = [
   { id: 'ai-ml', label: 'AI & ML', selected: true },
-  { id: 'startups', label: 'Startups', selected: true },
+  { id: 'startups', label: 'Startups & Ventures', selected: true },
   { id: 'career-growth', label: 'Career Growth', selected: true },
   { id: 'open-source', label: 'Open Source', selected: false },
-  { id: 'design', label: 'Design', selected: false },
+  { id: 'fintech', label: 'FinTech', selected: false },
+  { id: 'healthtech', label: 'HealthTech & Bio', selected: false },
+  { id: 'climate-tech', label: 'Climate & CleanTech', selected: false },
+  { id: 'web3', label: 'Web3 & Crypto', selected: false },
+  { id: 'product-strategy', label: 'Product Strategy', selected: false },
+  { id: 'design-creative', label: 'Design & Creative', selected: false },
   { id: 'venture-capital', label: 'Venture Capital', selected: false },
-  { id: 'research', label: 'Research', selected: false },
+  { id: 'academic-research', label: 'Academic Research', selected: false },
+  { id: 'social-impact', label: 'Social Impact', selected: false },
 ];
 
 const DEFAULT_MENTOR_EXPERTISE: Tag[] = [
   { id: 'system-architecture', label: 'System Architecture', selected: true },
   { id: 'career-coaching', label: 'Career Coaching', selected: true },
   { id: 'interview-prep', label: 'Interview Prep', selected: true },
+  { id: 'resume-review', label: 'Resume & Portfolio Review', selected: true },
   { id: 'frontend-dev', label: 'Frontend Development', selected: false },
+  { id: 'backend-distributed', label: 'Backend & Distributed Systems', selected: false },
   { id: 'cloud-devops', label: 'Cloud & DevOps', selected: false },
   { id: 'team-leadership', label: 'Engineering Leadership', selected: false },
-  { id: 'ai-engineering', label: 'AI Engineering', selected: false },
+  { id: 'ai-engineering', label: 'AI Engineering & LLMs', selected: false },
+  { id: 'product-strategy', label: 'Product Strategy & Roadmaps', selected: false },
+  { id: 'startup-pitching', label: 'Startup Pitching & Funding', selected: false },
+  { id: 'cross-functional', label: 'Cross-Functional Collaboration', selected: false },
 ];
 
 export default function MentorProfileScreen() {
@@ -104,12 +124,11 @@ function AdaptiveProfileForm({
 
   const isNew = params.isNew === 'true' || !profile;
 
-  // Role resolution
-  const resolvedRole = (params.role?.toUpperCase() ||
-    profile?.role ||
-    user?.role ||
-    'STUDENT') as 'STUDENT' | 'MENTOR';
-  const [role, setRole] = useState<'STUDENT' | 'MENTOR'>(resolvedRole);
+  // Single locked role: user selects when registering and cannot change it
+  const role: 'STUDENT' | 'MENTOR' =
+    (params.role?.toUpperCase() === 'MENTOR' || profile?.role === 'MENTOR')
+      ? 'MENTOR'
+      : 'STUDENT';
 
   // Common Fields
   const [fullName, setFullName] = useState(
@@ -196,7 +215,7 @@ function AdaptiveProfileForm({
 
     try {
       if (profile) {
-        // Update existing profile
+        // Update existing profile (avatar is managed directly through Clerk)
         await updateProfileMutation.mutateAsync({
           id: profile.id,
           input: {
@@ -204,7 +223,6 @@ function AdaptiveProfileForm({
             role,
             bio: bio.trim(),
             phoneNumber: phoneNumber.trim() || undefined,
-            avatarUrl: profile.avatarUrl || user?.avatarUri,
             university: role === 'STUDENT' ? university : undefined,
             degree: role === 'STUDENT' ? major : undefined,
             fieldOfStudy: role === 'STUDENT' ? major : undefined,
@@ -225,7 +243,7 @@ function AdaptiveProfileForm({
           { text: 'OK', onPress: () => router.replace('/(tabs)/profile') },
         ]);
       } else {
-        // Create new profile
+        // Create new profile (avatar is managed directly through Clerk)
         await createProfileMutation.mutateAsync({
           userId: user?.id || 'usr_current',
           email: user?.email,
@@ -233,7 +251,6 @@ function AdaptiveProfileForm({
           role,
           bio: bio.trim(),
           phoneNumber: phoneNumber.trim() || undefined,
-          avatarUrl: user?.avatarUri,
           university: role === 'STUDENT' ? university : undefined,
           degree: role === 'STUDENT' ? major : undefined,
           fieldOfStudy: role === 'STUDENT' ? major : undefined,
@@ -308,51 +325,24 @@ function AdaptiveProfileForm({
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={[styles.titleBlock, { backgroundColor: theme.card }]}>
           <ThemedText type="title" style={styles.pageTitle}>
-            {isNew ? 'Complete your profile' : 'Edit your profile'}
+            {isNew
+              ? role === 'MENTOR'
+                ? 'Complete your mentor profile'
+                : 'Complete your student profile'
+              : role === 'MENTOR'
+              ? 'Edit your mentor profile'
+              : 'Edit your student profile'}
           </ThemedText>
           <ThemedText style={{ color: theme.mutedText }}>
             {isNew
-              ? 'This helps us match you with the right mentors and peers.'
+              ? role === 'MENTOR'
+                ? 'Share your experience to help students find and connect with you.'
+                : 'Help us match you with the right industry mentors and peers.'
               : 'Keep your information up to date for better mentorship matches.'}
           </ThemedText>
         </View>
 
-        {/* Role Switcher Pill */}
-        <View style={styles.roleToggleRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setRole('STUDENT')}
-            style={[
-              styles.roleTogglePill,
-              role === 'STUDENT' && styles.roleTogglePillActiveStudent,
-            ]}>
-            <Text
-              style={[
-                styles.roleToggleText,
-                role === 'STUDENT' && styles.roleToggleTextActive,
-              ]}>
-              🎓 Student
-            </Text>
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setRole('MENTOR')}
-            style={[
-              styles.roleTogglePill,
-              role === 'MENTOR' && styles.roleTogglePillActiveMentor,
-            ]}>
-            <Text
-              style={[
-                styles.roleToggleText,
-                role === 'MENTOR' && styles.roleToggleTextActive,
-              ]}>
-              🌟 Mentor
-            </Text>
-          </Pressable>
-        </View>
-
-        <ProfileAvatar uri={profile?.avatarUrl || user?.avatarUri} />
+        <ProfileAvatar uri={user?.avatarUri} />
 
         {/* Basic Info */}
         <SectionCard title="Basic Info">
@@ -381,7 +371,7 @@ function AdaptiveProfileForm({
           />
         </SectionCard>
 
-        {/* STUDENT SECTION */}
+        {/* STUDENT SECTION - ONLY VISIBLE TO STUDENTS */}
         {role === 'STUDENT' && (
           <>
             <SectionCard title="Academic Background">
@@ -445,7 +435,7 @@ function AdaptiveProfileForm({
           </>
         )}
 
-        {/* MENTOR SECTION */}
+        {/* MENTOR SECTION - ONLY VISIBLE TO MENTORS */}
         {role === 'MENTOR' && (
           <>
             <SectionCard title="Professional Experience">
@@ -567,39 +557,6 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 24,
     lineHeight: 30,
-  },
-  roleToggleRow: {
-    flexDirection: 'row',
-    backgroundColor: '#F3F4F8',
-    borderRadius: 14,
-    padding: 4,
-    gap: 6,
-  },
-  roleTogglePill: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 10,
-  },
-  roleTogglePillActiveStudent: {
-    backgroundColor: '#EEF2FF',
-    borderWidth: 1,
-    borderColor: '#C7D7FF',
-  },
-  roleTogglePillActiveMentor: {
-    backgroundColor: '#F3EEFF',
-    borderWidth: 1,
-    borderColor: '#D4BBFF',
-  },
-  roleToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  roleToggleTextActive: {
-    color: '#111827',
-    fontWeight: '700',
   },
   row: {
     flexDirection: 'row',

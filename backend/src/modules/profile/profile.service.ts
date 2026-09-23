@@ -149,14 +149,12 @@ export class ProfileService {
         name: data.displayName,
         role,
         bio: data.bio || null,
-        avatarUrl: data.avatarUrl || null,
         phoneNumber: data.phoneNumber || null,
       },
       update: {
         name: data.displayName,
         role,
         bio: data.bio !== undefined ? data.bio : undefined,
-        avatarUrl: data.avatarUrl !== undefined ? data.avatarUrl : undefined,
         phoneNumber: data.phoneNumber !== undefined ? data.phoneNumber : undefined,
       },
     });
@@ -254,7 +252,6 @@ export class ProfileService {
         name: data.displayName !== undefined ? data.displayName : undefined,
         role: data.role ? (role as "STUDENT" | "MENTOR") : undefined,
         bio: data.bio !== undefined ? data.bio : undefined,
-        avatarUrl: data.avatarUrl !== undefined ? data.avatarUrl : undefined,
         phoneNumber: data.phoneNumber !== undefined ? data.phoneNumber : undefined,
       },
     });
