@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { sendResponse } from "@/lib/sendResponse";
 
+export const dynamic = "force-dynamic";
+
 /**
  * System health check
  * @description Verifies API and database availability.
