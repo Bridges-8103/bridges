@@ -8,11 +8,13 @@ export function LabeledTextarea({
   value,
   onChangeText,
   maxLength,
+  placeholder,
 }: {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   maxLength: number;
+  placeholder?: string;
 }) {
   const theme = useTheme();
 
@@ -22,6 +24,7 @@ export function LabeledTextarea({
       <TextInput
         style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text }]}
         placeholderTextColor={theme.labelText}
+        placeholder={placeholder}
         multiline
         value={value}
         onChangeText={onChangeText}

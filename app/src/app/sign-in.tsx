@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useAuth, useSignIn } from '@clerk/expo';
 import { SocialAuthButton } from '@/components/auth/social-auth-button';
+import { getProfile } from '@/services/profile/api';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -52,7 +53,19 @@ export default function SignInScreen() {
         return;
       }
 
-      router.replace('/(tabs)');
+      try {
+        const profile = await getProfile();
+        if (profile) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace({
+            pathname: '/mentor-profile',
+            params: { isNew: 'true' },
+          });
+        }
+      } catch {
+        router.replace('/(tabs)');
+      }
     } catch (caughtError) {
       setErrorMessage(getClerkErrorMessage(caughtError, 'Unable to sign in.'));
     } finally {

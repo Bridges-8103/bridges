@@ -4,17 +4,23 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 
-export function ProfileAvatar({ uri, onEdit }: { uri: string; onEdit?: () => void }) {
+const DEFAULT_AVATAR =
+  'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces';
+
+export function ProfileAvatar({ uri, onEdit }: { uri?: string; onEdit?: () => void }) {
   const theme = useTheme();
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri }} style={[styles.avatar, { borderColor: theme.background }]} />
+      <Image
+        source={{ uri: uri || DEFAULT_AVATAR }}
+        style={[styles.avatar, { borderColor: theme.background }]}
+      />
       <Pressable
         onPress={onEdit}
         style={[styles.badge, { backgroundColor: theme.primary, borderColor: theme.background }]}>
         <SymbolView
-          name={{ ios: 'plus', android: 'add', web: 'add' }}
+          name={{ ios: 'camera.fill', android: 'photo_camera', web: 'photo_camera' }}
           size={16}
           tintColor="#fff"
         />

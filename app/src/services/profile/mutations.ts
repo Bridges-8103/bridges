@@ -3,23 +3,30 @@ import { createProfile, updateProfile } from './api';
 import { profileKeys } from './keys';
 import { CreateProfileInput, UpdateProfileInput, UserProfile } from './types';
 
-/** Variables for an update: the backend patches by profile ID. */
+/** Variables for an update: either input directly or wrapped with id. */
 export interface UpdateProfileVariables {
-  id: string;
+  id?: string;
   input: UpdateProfileInput;
 }
+
+export type UpdateProfileParam = UpdateProfileVariables | UpdateProfileInput;
 
 /**
  * Update the authenticated user's profile, then refresh the cached copy.
  */
 export function useUpdateProfileMutation(
-  options?: UseMutationOptions<UserProfile | null, Error, UpdateProfileVariables>
+  options?: UseMutationOptions<UserProfile | null, Error, UpdateProfileParam>
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     ...options,
-    mutationFn: ({ id, input }: UpdateProfileVariables) => updateProfile(id, input),
+    mutationFn: (variables: UpdateProfileParam) => {
+      if ('input' in variables) {
+        return updateProfile(variables.input, variables.id);
+      }
+      return updateProfile(variables);
+    },
     onSuccess: async (...args) => {
       await queryClient.invalidateQueries({ queryKey: profileKeys.current() });
       await options?.onSuccess?.(...args);

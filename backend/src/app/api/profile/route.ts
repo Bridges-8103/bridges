@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { sendResponse } from "@/lib/sendResponse";
 import { withAuth } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validate";
-import { createProfileSchema } from "@/modules/profile/profile.schema";
+import { createProfileSchema, updateProfileSchema } from "@/modules/profile/profile.schema";
 import { ProfileService } from "@/modules/profile/profile.service";
 
 /**
@@ -14,7 +14,7 @@ import { ProfileService } from "@/modules/profile/profile.service";
  * @openapi
  */
 export const GET = withAuth(async (_req: NextRequest, { user }) => {
-  const profile = await ProfileService.getProfileByUserId(user.id);
+  const profile = await ProfileService.getProfileByUserIdOrEmail(user.id, user.email);
 
   if (!profile) {
     return sendResponse(
@@ -44,17 +44,37 @@ export const GET = withAuth(async (_req: NextRequest, { user }) => {
 export const POST = withAuth(async (req: NextRequest, { user }) => {
   const body = await parseJsonBody(req, createProfileSchema);
 
-  // Enforce the authenticated user's ID
   const profileData = {
     ...body,
     userId: user.id,
+    email: user.email,
   };
 
-  const newProfile = await ProfileService.createProfile(profileData);
+  const newProfile = await ProfileService.createProfile(profileData, user);
 
   return sendResponse(
     201,
     newProfile,
-    "Profile created successfully (placeholder)."
+    "Profile created successfully."
+  );
+});
+
+/**
+ * Update current user profile
+ * @description Updates details of the current authenticated user's profile.
+ * @body updateProfileSchema
+ * @response 200:profileResponseSchema
+ * @auth bearer
+ * @responseSet auth
+ * @openapi
+ */
+export const PATCH = withAuth(async (req: NextRequest, { user }) => {
+  const body = await parseJsonBody(req, updateProfileSchema);
+  const updatedProfile = await ProfileService.updateProfile(user.id, body, user);
+
+  return sendResponse(
+    200,
+    updatedProfile,
+    "Profile updated successfully."
   );
 });

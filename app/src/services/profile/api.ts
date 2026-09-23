@@ -40,17 +40,14 @@ export const createProfile = async (input: CreateProfileInput): Promise<UserProf
 };
 
 /**
- * Update a profile by its entity ID.
- * The backend exposes PATCH at /api/profile/:id — there is no collection-level
- * PATCH, so the caller must supply the profile ID.
+ * Update the authenticated user's profile.
+ * Uses collection-level PATCH /api/profile or /api/profile/:id when provided.
  */
 export const updateProfile = async (
-  id: string,
-  input: UpdateProfileInput
+  input: UpdateProfileInput,
+  id?: string
 ): Promise<UserProfile | null> => {
-  const response = await api.patch<ApiEnvelope<UserProfile>>(
-    `/api/profile/${encodeURIComponent(id)}`,
-    input
-  );
+  const url = id ? `/api/profile/${encodeURIComponent(id)}` : '/api/profile';
+  const response = await api.patch<ApiEnvelope<UserProfile>>(url, input);
   return unwrap(response.data);
 };

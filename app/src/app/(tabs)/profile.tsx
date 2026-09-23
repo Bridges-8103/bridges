@@ -85,7 +85,45 @@ export default function ProfileScreen() {
                   {profile.bio}
                 </Text>
               ) : null}
-              {!hasProfile ? (
+              {hasProfile && profile ? (
+                <View style={styles.badgeRow}>
+                  <View
+                    style={[
+                      styles.badge,
+                      profile.role === 'MENTOR' ? styles.badgeMentor : styles.badgeStudent,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.badgeText,
+                        profile.role === 'MENTOR'
+                          ? styles.badgeMentorText
+                          : styles.badgeStudentText,
+                      ]}>
+                      {profile.role === 'MENTOR' ? '🌟 Mentor' : '🎓 Student'}
+                    </Text>
+                  </View>
+
+                  {profile.role === 'STUDENT' && profile.studentDetail?.university ? (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>
+                        {profile.studentDetail.university}
+                        {profile.studentDetail.yearOfStudy
+                          ? ` · Yr ${profile.studentDetail.yearOfStudy}`
+                          : ''}
+                      </Text>
+                    </View>
+                  ) : profile.role === 'MENTOR' && profile.mentorDetail?.jobTitle ? (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>
+                        {profile.mentorDetail.jobTitle}
+                        {profile.mentorDetail.company
+                          ? ` @ ${profile.mentorDetail.company}`
+                          : ''}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : (
                 <View style={styles.badgeRow}>
                   <View style={[styles.badge, styles.badgeWarning]}>
                     <Text style={[styles.badgeText, styles.badgeWarningText]}>
@@ -93,7 +131,7 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                 </View>
-              ) : null}
+              )}
             </View>
           </View>
         )}
@@ -112,7 +150,12 @@ export default function ProfileScreen() {
           <Text style={styles.menuTitle}>Account & Settings</Text>
 
           <Pressable
-            onPress={() => router.push('/mentor-profile')}
+            onPress={() =>
+              router.push({
+                pathname: '/mentor-profile',
+                params: { role: profile?.role || 'STUDENT' },
+              })
+            }
             style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
             <View style={styles.menuLeft}>
               <View style={[styles.menuIconContainer, { backgroundColor: '#EEF2FF' }]}>
@@ -266,6 +309,20 @@ const styles = StyleSheet.create({
   },
   badgeWarningText: {
     color: '#92400E',
+  },
+  badgeStudent: {
+    backgroundColor: '#EEF2FF',
+    borderColor: '#C7D7FF',
+  },
+  badgeStudentText: {
+    color: '#3B5DF6',
+  },
+  badgeMentor: {
+    backgroundColor: '#F3EEFF',
+    borderColor: '#D4BBFF',
+  },
+  badgeMentorText: {
+    color: '#7C3AED',
   },
   userBio: {
     color: '#4B5563',

@@ -11,6 +11,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthProvider } from '@/context/auth-context';
 import { queryClient } from '@/lib/query-client';
+import { useProfileQuery } from '@/services/profile/queries';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -21,6 +22,9 @@ const hasValidPublishableKey =
 
 function AuthGate() {
   const { isLoaded, isSignedIn } = useClerkAuth();
+  const { data: profile, isLoading: isProfileLoading } = useProfileQuery({
+    enabled: Boolean(isSignedIn),
+  });
   const router = useRouter();
   const segments = useSegments();
 
@@ -34,9 +38,14 @@ function AuthGate() {
     if (!isSignedIn && !isAuthRoute && currentRoute) {
       router.replace('/welcome');
     } else if (isSignedIn && isAuthRoute) {
-      router.replace('/(tabs)');
+      if (isProfileLoading) return;
+      if (!profile) {
+        router.replace('/mentor-profile');
+      } else {
+        router.replace('/(tabs)');
+      }
     }
-  }, [isLoaded, isSignedIn, router, segments]);
+  }, [isLoaded, isSignedIn, profile, isProfileLoading, router, segments]);
 
   return (
     <>
