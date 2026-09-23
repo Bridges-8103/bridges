@@ -1,13 +1,31 @@
 import React from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/hooks/use-auth';
+import { useProfileQuery } from '@/services/profile/queries';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { data: profile, isPending, isError, error, refetch, isRefetching } = useProfileQuery();
+
+  // Clerk identity is the trustworthy fallback while the profile loads or
+  // before the user has created one. Never render invented placeholder data.
+  const displayName = profile?.displayName || user?.name || 'Your profile';
+  const email = user?.email ?? '';
+  const avatarUri = profile?.avatarUrl || user?.avatarUri;
+  const hasProfile = Boolean(profile);
 
   const handleSignOut = async () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -31,28 +49,63 @@ export default function ProfileScreen() {
         </View>
 
         {/* User Card */}
-        <View style={styles.userCard}>
-          <Image
-            source={{
-              uri:
-                user?.avatarUri ||
-                'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces',
-            }}
-            style={styles.avatar}
-          />
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.name || 'Jamie Chen'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'jamie.chen@stanford.edu'}</Text>
-            <View style={styles.badgeRow}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Stanford University</Text>
+        {isPending ? (
+          <View style={[styles.userCard, styles.stateCard]}>
+            <ActivityIndicator color="#3B5DF6" />
+            <Text style={styles.stateText}>Loading your profile…</Text>
+          </View>
+        ) : isError ? (
+          <View style={[styles.userCard, styles.stateCard]}>
+            <Text style={styles.stateTitle}>Couldn&apos;t load your profile</Text>
+            <Text style={styles.stateText}>{error?.message ?? 'Please try again.'}</Text>
+            <Pressable
+              accessibilityRole="button"
+              disabled={isRefetching}
+              onPress={() => refetch()}
+              style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}>
+              <Text style={styles.retryText}>{isRefetching ? 'Retrying…' : 'Retry'}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.userCard}>
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.avatarInitial}>
+                  {displayName.trim().charAt(0).toUpperCase() || '?'}
+                </Text>
               </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Year 3 · CS</Text>
-              </View>
+            )}
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{displayName}</Text>
+              {email ? <Text style={styles.userEmail}>{email}</Text> : null}
+              {profile?.bio ? (
+                <Text numberOfLines={2} style={styles.userBio}>
+                  {profile.bio}
+                </Text>
+              ) : null}
+              {!hasProfile ? (
+                <View style={styles.badgeRow}>
+                  <View style={[styles.badge, styles.badgeWarning]}>
+                    <Text style={[styles.badgeText, styles.badgeWarningText]}>
+                      Profile not set up yet
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
             </View>
           </View>
-        </View>
+        )}
+
+        {!isPending && !isError && !hasProfile ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/mentor-profile')}
+            style={({ pressed }) => [styles.ctaButton, pressed && styles.pressed]}>
+            <Text style={styles.ctaText}>Complete your profile</Text>
+          </Pressable>
+        ) : null}
 
         {/* Action Menu */}
         <View style={styles.menuSection}>
@@ -206,6 +259,66 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     fontSize: 11,
     fontWeight: '600',
+  },
+  badgeWarning: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FDE68A',
+  },
+  badgeWarningText: {
+    color: '#92400E',
+  },
+  userBio: {
+    color: '#4B5563',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  avatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    color: '#3B5DF6',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  stateCard: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  stateTitle: {
+    color: '#111827',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  stateText: {
+    color: '#6B7280',
+    fontSize: 13,
+  },
+  retryButton: {
+    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#EEF2FF',
+  },
+  retryText: {
+    color: '#3B5DF6',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  ctaButton: {
+    backgroundColor: '#3B5DF6',
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   menuSection: {
     gap: 10,
