@@ -22,6 +22,58 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Database Management (Prisma)
+
+Ensure your `.env` contains a valid `DATABASE_URL` before running database commands.
+
+### Schema Sync & Prototyping (Fast Iteration)
+
+Best for active development and cloud-hosted/pooled databases (e.g. Prisma Postgres, Supabase, Neon) without needing shadow databases:
+
+```bash
+# Push schema changes directly to the database and regenerate client
+yarn db:push
+# or: npm run db:push
+
+# Force reset the database and push new schema (deletes all data)
+yarn db:push:reset
+# or: npm run db:push:reset
+```
+
+### Migrations (Version Controlled)
+
+Use when creating tracked, version-controlled migration files in `prisma/migrations/`:
+
+```bash
+# Create and apply a new migration locally
+yarn db:migrate
+# or: npm run db:migrate -- --name <migration_name>
+
+# Create migration SQL file only (without applying immediately)
+yarn db:migrate:create
+# or: npm run db:migrate:create -- --name <migration_name>
+
+# Apply pending migrations to production/staging (CI/CD or production server)
+yarn db:migrate:deploy
+# or: npm run db:migrate:deploy
+
+# Check migration status and pending migrations
+yarn db:migrate:status
+# or: npm run db:migrate:status
+```
+
+### Client Generation & Seeding
+
+```bash
+# Regenerate Prisma Client (@prisma/client)
+yarn db:generate
+# or: npm run db:generate
+
+# Seed the database with initial/mock data (prisma/seed.ts)
+yarn db:seed
+# or: npm run db:seed
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
