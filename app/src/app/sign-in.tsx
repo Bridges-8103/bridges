@@ -14,13 +14,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useAuth, useSignIn } from '@clerk/expo';
+import { useSignIn } from '@clerk/expo';
 import { SocialAuthButton } from '@/components/auth/social-auth-button';
-import { getProfile } from '@/services/profile/api';
+import { ROUTES } from '@/constants/routes';
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { isLoaded } = useAuth();
   const { signIn } = useSignIn();
 
   const [email, setEmail] = useState('');
@@ -33,6 +32,7 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     if (!isFormValid || isSubmitting || !signIn) return;
+
     setErrorMessage('');
     setIsSubmitting(true);
 
@@ -47,24 +47,23 @@ export default function SignInScreen() {
         return;
       }
 
-      const { error: finalizeError } = await signIn.finalize();
-      if (finalizeError) {
-        setErrorMessage(getClerkErrorMessage(finalizeError, 'Unable to finish signing you in.'));
-        return;
-      }
-
-      try {
-        const profile = await getProfile();
-        if (profile) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace({
-            pathname: '/mentor-profile',
-            params: { isNew: 'true' },
-          });
+      if (signIn.status === 'complete' && signIn.createdSessionId) {
+        const { error: finalizeError } = await signIn.finalize();
+        if (finalizeError) {
+          setErrorMessage(getClerkErrorMessage(finalizeError, 'Unable to finish signing you in.'));
+          return;
         }
-      } catch {
-        router.replace('/(tabs)');
+
+        // Navigate through the middle screen to check profile setup and route appropriately
+        router.replace(ROUTES.INDEX);
+      } else if (signIn.status === 'needs_second_factor') {
+        setErrorMessage('Two-factor authentication is required for this account.');
+      } else if (signIn.status === 'needs_first_factor') {
+        setErrorMessage('Additional verification is required.');
+      } else if (signIn.status === 'needs_new_password') {
+        setErrorMessage('Password reset required.');
+      } else {
+        setErrorMessage(`Sign-in incomplete (status: ${signIn.status || 'unknown'}).`);
       }
     } catch (caughtError) {
       setErrorMessage(getClerkErrorMessage(caughtError, 'Unable to sign in.'));
@@ -81,11 +80,9 @@ export default function SignInScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.push('/welcome');
+      router.push(ROUTES.WELCOME);
     }
   };
-
-  if (!isLoaded) return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -208,7 +205,7 @@ export default function SignInScreen() {
               New to Bridges?{' '}
               <Text
                 style={styles.footerLink}
-                onPress={() => router.push('/sign-up')}>
+                onPress={() => router.push(ROUTES.SIGN_UP)}>
                 Create account
               </Text>
             </Text>

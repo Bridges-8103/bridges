@@ -9,9 +9,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import {
+  isAuthRoute,
+  isProtectedRoute,
+  ROUTES,
+  ROUTE_SEGMENTS,
+} from '@/constants/routes';
 import { AuthProvider } from '@/context/auth-context';
 import { queryClient } from '@/lib/query-client';
-import { useProfileQuery } from '@/services/profile/queries';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,40 +27,30 @@ const hasValidPublishableKey =
 
 function AuthGate() {
   const { isLoaded, isSignedIn } = useClerkAuth();
-  const { data: profile, isLoading: isProfileLoading } = useProfileQuery({
-    enabled: Boolean(isSignedIn),
-  });
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
     if (!isLoaded) return;
 
-    const currentRoute = segments[0] as string | undefined;
-    const isAuthRoute =
-      currentRoute === 'sign-in' || currentRoute === 'sign-up' || currentRoute === 'welcome';
+    const rootSegment = segments[0] as string | undefined;
 
-    if (!isSignedIn && !isAuthRoute && currentRoute) {
-      router.replace('/welcome');
-    } else if (isSignedIn && isAuthRoute) {
-      if (isProfileLoading) return;
-      if (!profile) {
-        router.replace('/mentor-profile');
-      } else {
-        router.replace('/(tabs)');
-      }
+    if (!isSignedIn && isProtectedRoute(rootSegment)) {
+      router.replace(ROUTES.WELCOME);
+    } else if (isSignedIn && isAuthRoute(rootSegment)) {
+      router.replace(ROUTES.TABS);
     }
-  }, [isLoaded, isSignedIn, profile, isProfileLoading, router, segments]);
+  }, [isLoaded, isSignedIn, router, segments]);
 
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="welcome" />
-        <Stack.Screen name="sign-in" />
-        <Stack.Screen name="sign-up" />
-        <Stack.Screen name="mentor-profile" />
+        <Stack.Screen name={ROUTE_SEGMENTS.INDEX} />
+        <Stack.Screen name={ROUTE_SEGMENTS.TABS} />
+        <Stack.Screen name={ROUTE_SEGMENTS.WELCOME} />
+        <Stack.Screen name={ROUTE_SEGMENTS.SIGN_IN} />
+        <Stack.Screen name={ROUTE_SEGMENTS.SIGN_UP} />
+        <Stack.Screen name={ROUTE_SEGMENTS.MENTOR_PROFILE} />
       </Stack>
       <StatusBar style="dark" />
     </>

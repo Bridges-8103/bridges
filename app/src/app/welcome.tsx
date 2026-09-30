@@ -8,6 +8,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MentorAvatarCluster } from "@/components/home/mentor-avatar-cluster";
+import { ROUTES } from "@/constants/routes";
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function WelcomeScreen() {
         <View style={styles.actionSection}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push("/sign-up")}
+            onPress={() => router.push(ROUTES.SIGN_UP)}
             style={({ pressed }) => [
               styles.primaryButton,
               pressed && styles.pressed,
@@ -73,7 +74,7 @@ export default function WelcomeScreen() {
 
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push("/sign-in")}
+            onPress={() => router.push(ROUTES.SIGN_IN)}
             style={({ pressed }) => [
               styles.secondaryButton,
               pressed && styles.pressed,

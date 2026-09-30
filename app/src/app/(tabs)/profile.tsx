@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/hooks/use-auth';
+import { ROUTES } from '@/constants/routes';
 import { useProfileQuery } from '@/services/profile/queries';
 
 export default function ProfileScreen() {
@@ -35,7 +36,7 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           await signOut();
-          router.replace('/welcome');
+          router.replace(ROUTES.WELCOME);
         },
       },
     ]);
@@ -56,7 +57,7 @@ export default function ProfileScreen() {
           </View>
         ) : isError ? (
           <View style={[styles.userCard, styles.stateCard]}>
-            <Text style={styles.stateTitle}>Couldn&apos;t load your profile</Text>
+            <Text style={styles.stateTitle}>Cannot fetch profile</Text>
             <Text style={styles.stateText}>{error?.message ?? 'Please try again.'}</Text>
             <Pressable
               accessibilityRole="button"
@@ -139,7 +140,7 @@ export default function ProfileScreen() {
         {!isPending && !isError && !hasProfile ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push('/mentor-profile')}
+            onPress={() => router.push(ROUTES.MENTOR_PROFILE)}
             style={({ pressed }) => [styles.ctaButton, pressed && styles.pressed]}>
             <Text style={styles.ctaText}>Complete your profile</Text>
           </Pressable>
@@ -152,7 +153,7 @@ export default function ProfileScreen() {
           <Pressable
             onPress={() =>
               router.push({
-                pathname: '/mentor-profile',
+                pathname: ROUTES.MENTOR_PROFILE,
                 params: { role: profile?.role || 'STUDENT' },
               })
             }
@@ -178,7 +179,7 @@ export default function ProfileScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => router.push('/welcome')}
+            onPress={() => router.push(ROUTES.WELCOME)}
             style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
             <View style={styles.menuLeft}>
               <View style={[styles.menuIconContainer, { backgroundColor: '#F3F4F8' }]}>

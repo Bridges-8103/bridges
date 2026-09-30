@@ -33,6 +33,14 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 224
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "17.0"
+          }
+        }
       ]
     ],
     "experiments": {

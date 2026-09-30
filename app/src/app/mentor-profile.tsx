@@ -84,7 +84,14 @@ const DEFAULT_MENTOR_EXPERTISE: Tag[] = [
 ];
 
 export default function MentorProfileScreen() {
-  const { data: profile, isLoading } = useProfileQuery();
+  const {
+    data: profile,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useProfileQuery();
   const params = useLocalSearchParams<{ role?: string; isNew?: string; name?: string }>();
   const theme = useTheme();
 
@@ -96,6 +103,32 @@ export default function MentorProfileScreen() {
           { backgroundColor: theme.pageBackground },
         ]}>
         <ActivityIndicator size="large" color="#3B5DF6" />
+      </View>
+    );
+  }
+
+  // Issue 1: If API call to profile is error, display card as cannot fetch profile instead of assuming not setup
+  if (isError) {
+    return (
+      <View
+        style={[
+          styles.loadingContainer,
+          { backgroundColor: theme.pageBackground, padding: 24 },
+        ]}>
+        <View style={styles.errorCard}>
+          <Text style={styles.errorCardTitle}>Cannot fetch profile</Text>
+          <Text style={styles.errorCardText}>
+            {error?.message ||
+              'Unable to retrieve your profile information. Please check your connection and try again.'}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRefetching}
+            onPress={() => refetch()}
+            style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}>
+            <Text style={styles.retryButtonText}>{isRefetching ? 'Retrying…' : 'Retry'}</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -566,5 +599,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
+  },
+  errorCard: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 16,
+    padding: 20,
+    gap: 12,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
+  },
+  errorCardTitle: {
+    color: '#991B1B',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  errorCardText: {
+    color: '#7F1D1D',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.8,
   },
 });

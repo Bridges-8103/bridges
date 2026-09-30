@@ -34,15 +34,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isSignedIn, getToken]);
 
+  const metadataFullName =
+    typeof clerkUser?.unsafeMetadata?.fullName === 'string' && clerkUser.unsafeMetadata.fullName.trim()
+      ? clerkUser.unsafeMetadata.fullName.trim()
+      : typeof clerkUser?.unsafeMetadata?.name === 'string' && clerkUser.unsafeMetadata.name.trim()
+        ? clerkUser.unsafeMetadata.name.trim()
+        : undefined;
+
+  const clerkFirstName = clerkUser?.firstName?.trim();
+  const clerkLastName = clerkUser?.lastName?.trim();
+  const clerkFullName =
+    clerkUser?.fullName?.trim() ||
+    (clerkFirstName && clerkLastName ? `${clerkFirstName} ${clerkLastName}` : clerkFirstName);
+
+  const realName = clerkFullName || metadataFullName;
+
+  const rawUsername = clerkUser?.username?.trim();
+  const isGeneratedUsername =
+    !rawUsername ||
+    rawUsername.startsWith('user_') ||
+    /_\d{2,4}$/.test(rawUsername);
+
+  let cleanedUsername: string | undefined;
+  if (rawUsername) {
+    if (!isGeneratedUsername) {
+      cleanedUsername = rawUsername;
+    } else if (rawUsername.includes('_') && !rawUsername.startsWith('user_')) {
+      const withoutDigits = rawUsername.replace(/_\d+$/, '');
+      cleanedUsername = withoutDigits
+        .split('_')
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+    }
+  }
+
+  const emailPrefix = clerkUser?.primaryEmailAddress?.emailAddress?.split('@')[0];
+  let cleanEmailName: string | undefined;
+  if (emailPrefix && !emailPrefix.startsWith('user_')) {
+    cleanEmailName = emailPrefix
+      .split(/[._-]/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  const resolvedName = realName || cleanedUsername || cleanEmailName || 'Jamie Chen';
+
   const user: AuthUser | null = isSignedIn
     ? {
         id: clerkUser?.id || 'usr_current',
-        name:
-          clerkUser?.fullName ||
-          clerkUser?.firstName ||
-          clerkUser?.username ||
-          clerkUser?.primaryEmailAddress?.emailAddress?.split('@')[0] ||
-          'Jamie Chen',
+        name: resolvedName,
         email: clerkUser?.primaryEmailAddress?.emailAddress || 'student@university.edu',
         avatarUri: clerkUser?.imageUrl || DEFAULT_AVATAR,
         role: 'STUDENT',

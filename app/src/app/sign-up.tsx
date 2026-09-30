@@ -14,13 +14,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useAuth, useSignUp } from '@clerk/expo';
+import { useSignUp } from '@clerk/expo';
+import { ROUTES } from '@/constants/routes';
 
 type RoleType = 'STUDENT' | 'MENTOR';
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const { isLoaded } = useAuth();
   const { signUp } = useSignUp();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -54,11 +54,18 @@ export default function SignUpScreen() {
         '_' +
         Math.floor(Math.random() * 1000);
 
+      const trimmedFullName = fullName.trim();
+      const nameParts = trimmedFullName.split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || undefined;
+
       const { error: signUpError } = await signUp.password({
         username: generatedUsername,
         emailAddress: email.trim(),
         password,
-        unsafeMetadata: { role },
+        firstName,
+        lastName,
+        unsafeMetadata: { role, fullName: trimmedFullName },
       });
 
       if (signUpError) {
@@ -84,6 +91,7 @@ export default function SignUpScreen() {
 
   const handleVerify = async () => {
     if (!canVerify || isSubmitting || !signUp) return;
+
     setErrorMessage('');
     setIsSubmitting(true);
 
@@ -97,7 +105,7 @@ export default function SignUpScreen() {
       }
 
       if (signUp.status !== 'complete') {
-        const missingFields = signUp.missingFields.join(', ');
+        const missingFields = signUp.missingFields?.join(', ');
         setErrorMessage(
           missingFields
             ? `Clerk still requires: ${missingFields}.`
@@ -106,17 +114,19 @@ export default function SignUpScreen() {
         return;
       }
 
-      const { error: finalizeError } = await signUp.finalize();
-      if (finalizeError) {
-        setErrorMessage(
-          getClerkErrorMessage(finalizeError, 'Unable to finish creating your account.')
-        );
-        return;
+      if (signUp.createdSessionId) {
+        const { error: finalizeError } = await signUp.finalize();
+        if (finalizeError) {
+          setErrorMessage(
+            getClerkErrorMessage(finalizeError, 'Unable to finish creating your account.')
+          );
+          return;
+        }
       }
 
       // Redirection to profile setup depending on the selected role
       router.replace({
-        pathname: '/mentor-profile',
+        pathname: ROUTES.MENTOR_PROFILE,
         params: { role: selectedRole, isNew: 'true', name: fullName.trim() },
       });
     } catch (caughtError) {
@@ -139,11 +149,9 @@ export default function SignUpScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.push('/welcome');
+      router.push(ROUTES.WELCOME);
     }
   };
-
-  if (!isLoaded) return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -387,7 +395,7 @@ export default function SignUpScreen() {
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               Already have an account?{' '}
-              <Text style={styles.footerLink} onPress={() => router.push('/sign-in')}>
+              <Text style={styles.footerLink} onPress={() => router.push(ROUTES.SIGN_IN)}>
                 Sign in
               </Text>
             </Text>

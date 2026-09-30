@@ -1,15 +1,21 @@
 import { Redirect } from 'expo-router';
 import { useAuth } from '@clerk/expo';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ROUTES } from '@/constants/routes';
 import { useProfileQuery } from '@/services/profile/queries';
 
-export default function Index() {
+export default function MiddleGateScreen() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { data: profile, isLoading: isProfileLoading } = useProfileQuery({
-    enabled: Boolean(isSignedIn),
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    isSuccess: isProfileSuccess,
+  } = useProfileQuery({
+    enabled: Boolean(isLoaded && isSignedIn),
   });
 
-  if (!isLoaded || (isSignedIn && isProfileLoading)) {
+  // 1. Wait for Clerk auth to resolve
+  if (!isLoaded) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#3B5DF6" />
@@ -17,16 +23,35 @@ export default function Index() {
     );
   }
 
+  // 2. If unauthenticated, redirect to welcome
   if (!isSignedIn) {
-    return <Redirect href="/welcome" />;
+    return <Redirect href={ROUTES.WELCOME} />;
   }
 
-  // If user has not created a profile yet, route to profile setup
-  if (!profile) {
-    return <Redirect href="/mentor-profile" />;
+  // 3. If authenticated, wait for profile check to resolve
+  if (isProfileLoading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#3B5DF6" />
+      </View>
+    );
   }
 
-  return <Redirect href="/(tabs)" />;
+  // 4. If profile was successfully checked and user did NOT setup profile yet (profile === null),
+  // redirect to setup profile screen
+  if (isProfileSuccess && profile === null) {
+    return (
+      <Redirect
+        href={{
+          pathname: ROUTES.MENTOR_PROFILE,
+          params: { isNew: 'true' },
+        }}
+      />
+    );
+  }
+
+  // 5. Profile is set up (or API error occurred), move on to authenticated main app
+  return <Redirect href={ROUTES.TABS} />;
 }
 
 const styles = StyleSheet.create({

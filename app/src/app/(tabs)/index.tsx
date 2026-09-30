@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -10,23 +10,49 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { FieldCategoryCard } from '@/components/home/field-category-card';
 import { MentorCard } from '@/components/home/mentor-card';
 import { NextSessionCard } from '@/components/home/next-session-card';
 import { SearchBar } from '@/components/home/search-bar';
 import { mockFieldCategories, mockMentors, mockNextSession } from '@/data/mock-mentors';
 import { useAuth } from '@/hooks/use-auth';
+import { ROUTES } from '@/constants/routes';
+import { useProfileQuery } from '@/services/profile/queries';
 import type { Mentor } from '@/types/matching';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const {
+    data: profile,
+    isError: isProfileError,
+    error: profileError,
+    refetch: refetchProfile,
+    isRefetching,
+    isSuccess: isProfileSuccess,
+  } = useProfileQuery();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const userName = user?.name || 'Jamie Chen';
+  // Issue 2: On main screen, if they did not setup profile (API /profile response has profile: null),
+  // redirect to setup profile screen.
+  // CRITICAL: Only redirect when API call succeeded (200 OK) with profile explicitly null!
+  // Do NOT redirect when isProfileError is true or while loading.
+  useEffect(() => {
+    if (isProfileSuccess && profile === null) {
+      router.replace({
+        pathname: ROUTES.MENTOR_PROFILE,
+        params: { isNew: 'true' },
+      });
+    }
+  }, [isProfileSuccess, profile, router]);
+
+  // Issue 3: Use real user name instead of username for the greeting.
+  const userName = profile?.displayName || user?.name || 'Friend';
   const userAvatar =
+    profile?.avatarUrl ||
     user?.avatarUri ||
     'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces';
 
@@ -79,12 +105,37 @@ export default function HomeScreen() {
           {/* User Avatar with Green Online Dot */}
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push('/mentor-profile')}
+            onPress={() => router.push(ROUTES.MENTOR_PROFILE)}
             style={styles.profileButton}>
             <Image source={{ uri: userAvatar }} style={styles.profileAvatar} />
             <View style={styles.onlineBadge} />
           </Pressable>
         </View>
+
+        {/* Issue 1: Display card if API call to profile is error instead of assuming not setup */}
+        {isProfileError && (
+          <View style={styles.errorCard}>
+            <View style={styles.errorCardHeader}>
+              <SymbolView
+                name={{ ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }}
+                size={18}
+                tintColor="#DC2626"
+              />
+              <Text style={styles.errorCardTitle}>Cannot fetch profile</Text>
+            </View>
+            <Text style={styles.errorCardText}>
+              {profileError?.message ||
+                'Unable to retrieve your profile information. Please check your connection and try again.'}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              disabled={isRefetching}
+              onPress={() => refetchProfile()}
+              style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}>
+              <Text style={styles.retryButtonText}>{isRefetching ? 'Retrying…' : 'Retry'}</Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* Search Bar */}
         <View style={styles.searchSection}>
@@ -246,5 +297,45 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#9CA3AF',
     fontSize: 14,
+  },
+  errorCard: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+    marginTop: 6,
+  },
+  errorCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  errorCardTitle: {
+    color: '#991B1B',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  errorCardText: {
+    color: '#7F1D1D',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  retryButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
+    marginTop: 2,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.8,
   },
 });
