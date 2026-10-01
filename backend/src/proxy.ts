@@ -15,6 +15,7 @@ const PUBLIC_API_PATHS = [
   "/api/auth/register",
   "/api/auth/refresh",
   "/api/taxonomy",
+  "/api/mentors",
 ];
 
 /**

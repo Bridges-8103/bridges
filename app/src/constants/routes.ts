@@ -9,9 +9,12 @@ export const ROUTES = {
   TABS: '/(tabs)',
   MENTOR_PROFILE: '/mentor-profile',
   SELECT_TAGS: '/select-tags',
+  mentorDetail: (id: string | number) => `/mentor/${id}` as const,
 } as const;
 
-export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
+export type RoutePath =
+  | Exclude<(typeof ROUTES)[keyof typeof ROUTES], Function>
+  | `/mentor/${string}`;
 
 /**
  * Route segments corresponding to top-level route folders/files.
@@ -26,6 +29,8 @@ export const ROUTE_SEGMENTS = {
   TABS: '(tabs)',
   MENTOR_PROFILE: 'mentor-profile',
   SELECT_TAGS: 'select-tags',
+  MENTOR: 'mentor',
+  MENTOR_DETAIL: 'mentor/[id]',
 } as const;
 
 export type RouteSegment = (typeof ROUTE_SEGMENTS)[keyof typeof ROUTE_SEGMENTS];
@@ -54,6 +59,8 @@ export const PROTECTED_ROUTE_SEGMENTS: readonly RouteSegment[] = [
   ROUTE_SEGMENTS.TABS,
   ROUTE_SEGMENTS.MENTOR_PROFILE,
   ROUTE_SEGMENTS.SELECT_TAGS,
+  ROUTE_SEGMENTS.MENTOR,
+  ROUTE_SEGMENTS.MENTOR_DETAIL,
 ] as const;
 
 /**
@@ -67,6 +74,8 @@ export const ROUTE_ACCESS_MAP: Record<RouteSegment, RouteAccessType> = {
   [ROUTE_SEGMENTS.TABS]: 'protected',
   [ROUTE_SEGMENTS.MENTOR_PROFILE]: 'protected',
   [ROUTE_SEGMENTS.SELECT_TAGS]: 'protected',
+  [ROUTE_SEGMENTS.MENTOR]: 'protected',
+  [ROUTE_SEGMENTS.MENTOR_DETAIL]: 'protected',
 };
 
 /**

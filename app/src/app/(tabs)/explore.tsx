@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Pressable,
@@ -10,20 +11,24 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { CompactTagCard } from '@/components/common/compact-tag-card';
-import { calculateMentorMatches, mockMentors } from '@/data/mock-mentors';
-import { useUpdateProfileMutation } from '@/services/profile/mutations';
+import { ROUTES } from '@/constants/routes';
 import { useProfileQuery } from '@/services/profile/queries';
-import type { MentorMatch, StudentPreferences } from '@/types/matching';
+import { useUpdateProfileMutation } from '@/services/profile/mutations';
+import { useMentorsQuery, useSuggestedMentorsQuery } from '@/services/mentors/queries';
+import { useTaxonomyQuery } from '@/services/taxonomy/queries';
+import type { MentorProfile } from '@/services/mentors/types';
 
 export default function ExploreScreen() {
+  const router = useRouter();
   const { data: profile } = useProfileQuery();
   const updateProfileMutation = useUpdateProfileMutation();
 
   const profileInterests = profile?.studentDetail?.interests;
   const [localInterests, setLocalInterests] = useState<string[]>([
-    'Machine Learning',
+    'Machine learning',
     'Python',
   ]);
 
@@ -38,59 +43,76 @@ export default function ExploreScreen() {
     }
   };
 
-  const [careerGoal] = useState('AI Research');
-  const [industryPreference] = useState('Technology & AI');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // Calculate ranked matches dynamically using BRIDGES algorithm
-  const currentPreferences: StudentPreferences = {
-    interests: selectedInterests,
-    careerGoal,
-    industryPreference,
-  };
+  // Fetch real taxonomy categories from backend
+  const { data: taxonomyCategories = [] } = useTaxonomyQuery();
 
-  const matches: MentorMatch[] = calculateMentorMatches(currentPreferences, mockMentors);
+  const isFiltering = Boolean(selectedCategory || searchQuery.trim());
 
-  const filteredMatches = matches.filter((item) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      item.mentor.name.toLowerCase().includes(q) ||
-      item.mentor.jobTitle.toLowerCase().includes(q) ||
-      item.mentor.company.toLowerCase().includes(q)
-    );
-  });
+  // 1. If searching or filtered by category: query database mentors
+  const {
+    data: filteredResult,
+    isLoading: isFilteredLoading,
+  } = useMentorsQuery(
+    isFiltering
+      ? {
+          category: selectedCategory ?? undefined,
+          search: searchQuery.trim() || undefined,
+          limit: 30,
+        }
+      : undefined,
+    { enabled: isFiltering }
+  );
 
-  const handleBook = (match: MentorMatch) => {
+  // 2. Default state: interest-ranked mentor suggestions from database
+  const {
+    data: suggestedMatches = [],
+    isLoading: isSuggestionsLoading,
+  } = useSuggestedMentorsQuery(selectedInterests, 30, { enabled: !isFiltering });
+
+  const handleBook = (mentor: MentorProfile) => {
     Alert.alert(
-      `Book Session with ${match.mentor.name}`,
-      `Match Score: ${match.score}%\n\nReasons:\n• ${match.reasons.join('\n• ')}\n\nWould you like to send a mentorship request?`,
+      `Book Session with ${mentor.name}`,
+      `${mentor.jobTitle || 'Faculty Researcher'} at ${
+        mentor.company || 'Adelaide University'
+      }\n\nWould you like to send a mentorship inquiry?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Send Request',
           onPress: () =>
             Alert.alert(
-              'Request Sent!',
-              `Your request was sent to ${match.mentor.name}. They usually reply within 24 hours.`
+              'Request Sent! 🎉',
+              `Your request was sent to ${mentor.name}. They usually reply within 24-48 hours.`
             ),
         },
       ]
     );
   };
 
+  const handleViewMentor = (mentorId: string) => {
+    router.push(ROUTES.mentorDetail(mentorId));
+  };
+
+  const isLoading = isFiltering ? isFilteredLoading : isSuggestionsLoading;
+
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Find Your Mentor</Text>
           <Text style={styles.subtitle}>
-            Personalized recommendations ranked by your goals and interests.
+            Explore thousands of university researchers and faculty mentors matched to your goals.
           </Text>
         </View>
 
-        {/* Search */}
+        {/* Search Bar */}
         <View style={styles.searchBar}>
           <SymbolView
             name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
@@ -100,81 +122,263 @@ export default function ExploreScreen() {
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search by name, role, or company..."
+            placeholder="Search by mentor name, role, department, or skill…"
             placeholderTextColor="#9CA3AF"
             style={styles.searchInput}
+            autoCapitalize="none"
+            clearButtonMode="while-editing"
           />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <SymbolView
+                name={{ ios: 'xmark.circle.fill', android: 'close', web: 'close' }}
+                size={16}
+                tintColor="#9CA3AF"
+              />
+            </Pressable>
+          )}
+        </View>
+
+        {/* Category Horizontal Pills */}
+        <View style={styles.categorySection}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryTabsScroll}>
+            <Pressable
+              onPress={() => setSelectedCategory(null)}
+              style={[
+                styles.categoryTab,
+                selectedCategory === null && styles.categoryTabActive,
+              ]}>
+              <Text
+                style={[
+                  styles.categoryTabText,
+                  selectedCategory === null && styles.categoryTabTextActive,
+                ]}>
+                All Fields
+              </Text>
+            </Pressable>
+
+            {taxonomyCategories.map((cat) => {
+              const isSelected = selectedCategory === cat.slug;
+              return (
+                <Pressable
+                  key={cat.slug}
+                  onPress={() => setSelectedCategory(isSelected ? null : cat.slug)}
+                  style={[
+                    styles.categoryTab,
+                    isSelected && styles.categoryTabActive,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.categoryTabText,
+                      isSelected && styles.categoryTabTextActive,
+                    ]}>
+                    {cat.name}
+                  </Text>
+                  {cat.mentorCount > 0 && (
+                    <View
+                      style={[
+                        styles.categoryCountBadge,
+                        isSelected && styles.categoryCountBadgeActive,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.categoryCountText,
+                          isSelected && styles.categoryCountTextActive,
+                        ]}>
+                        {cat.mentorCount}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {/* Categorized Interests Selector */}
-        <CompactTagCard
-          title="Your Interests"
-          subtitle="Match with mentors specializing in these fields"
-          selectedTags={selectedInterests}
-          field="interests"
-          onRemoveTag={handleRemoveInterest}
-          color="primary"
-          emptyText="No interests selected. Tap below to find mentors by topic."
-        />
+        {!isFiltering && (
+          <CompactTagCard
+            title="Your Interests"
+            subtitle="Match with mentors specializing in these topics"
+            selectedTags={selectedInterests}
+            field="interests"
+            onRemoveTag={handleRemoveInterest}
+            color="primary"
+            emptyText="No interests selected. Tap below to find mentors by topic."
+          />
+        )}
 
-        {/* Matchmaking Results */}
+        {/* Results Section */}
         <View style={styles.section}>
           <View style={styles.resultsHeader}>
-            <Text style={styles.sectionLabel}>Ranked Recommendations</Text>
-            <Text style={styles.matchCountBadge}>{filteredMatches.length} Matches</Text>
+            <Text style={styles.sectionLabel}>
+              {isFiltering ? 'Search Results' : 'Recommended Mentors'}
+            </Text>
+            <Text style={styles.matchCountBadge}>
+              {isFiltering
+                ? `${filteredResult?.total ?? 0} Mentors`
+                : `${suggestedMatches.length} Matches`}
+            </Text>
           </View>
 
-          <View style={styles.matchesList}>
-            {filteredMatches.map((match) => (
-              <View key={match.mentor.id} style={styles.matchCard}>
-                <View style={styles.cardTop}>
-                  <Image
-                    source={{
-                      uri:
-                        match.mentor.avatarUri ||
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces',
-                    }}
-                    style={styles.avatar}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3B5DF6" />
+              <Text style={styles.loadingText}>Loading mentors from database…</Text>
+            </View>
+          ) : isFiltering ? (
+            // Filtered mentors list
+            filteredResult && filteredResult.items.length > 0 ? (
+              <View style={styles.matchesList}>
+                {filteredResult.items.map((mentor) => (
+                  <MentorListItem
+                    key={mentor.id}
+                    mentor={mentor}
+                    onPress={() => handleViewMentor(mentor.id)}
+                    onBook={() => handleBook(mentor)}
                   />
-
-                  <View style={styles.mentorInfo}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.mentorName}>{match.mentor.name}</Text>
-                      <View style={styles.scoreBadge}>
-                        <Text style={styles.scoreText}>{match.score}% Match</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.mentorRole}>
-                      {match.mentor.jobTitle} · {match.mentor.company}
-                    </Text>
-                    <Text style={styles.mentorExp}>
-                      ★ {match.mentor.rating} · {match.mentor.experienceYears} yrs experience
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Match Reasons */}
-                <View style={styles.reasonsContainer}>
-                  {match.reasons.map((reason, idx) => (
-                    <View key={idx} style={styles.reasonPill}>
-                      <Text style={styles.reasonText}>✓ {reason}</Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Action */}
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => handleBook(match)}
-                  style={styles.connectButton}>
-                  <Text style={styles.connectButtonText}>Connect with {match.mentor.name.split(' ')[0]}</Text>
-                </Pressable>
+                ))}
               </View>
-            ))}
-          </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>No mentors found</Text>
+                <Text style={styles.emptySubtitle}>
+                  Try clearing your search query or choosing a different field category.
+                </Text>
+              </View>
+            )
+          ) : (
+            // Suggested matches list
+            suggestedMatches.length > 0 ? (
+              <View style={styles.matchesList}>
+                {suggestedMatches.map((match) => (
+                  <MentorListItem
+                    key={match.mentor.id}
+                    mentor={match.mentor}
+                    score={match.score}
+                    reasons={match.matchReasons}
+                    onPress={() => handleViewMentor(match.mentor.id)}
+                    onBook={() => handleBook(match.mentor)}
+                  />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>No recommendations available</Text>
+                <Text style={styles.emptySubtitle}>
+                  Add interests above to unlock personalized recommendations.
+                </Text>
+              </View>
+            )
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function MentorListItem({
+  mentor,
+  score,
+  reasons,
+  onPress,
+  onBook,
+}: {
+  mentor: MentorProfile;
+  score?: number;
+  reasons?: string[];
+  onPress: () => void;
+  onBook: () => void;
+}) {
+  const initials = mentor.name
+    .split(' ')
+    .filter((p) => !p.includes('.'))
+    .slice(0, 2)
+    .map((p) => p.charAt(0))
+    .join('')
+    .toUpperCase();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.matchCard, pressed && styles.cardPressed]}>
+      <View style={styles.cardTop}>
+        {mentor.avatarUrl ? (
+          <Image source={{ uri: mentor.avatarUrl }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarFallback]}>
+            <Text style={styles.avatarInitial}>{initials || 'ME'}</Text>
+          </View>
+        )}
+
+        <View style={styles.mentorInfo}>
+          <View style={styles.nameRow}>
+            <Text style={styles.mentorName} numberOfLines={1}>
+              {mentor.name}
+            </Text>
+            {score !== undefined && score > 0 && (
+              <View style={styles.scoreBadge}>
+                <Text style={styles.scoreText}>{score}% Match</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.mentorRole} numberOfLines={1}>
+            {mentor.jobTitle || 'Faculty Researcher'}
+          </Text>
+
+          {mentor.company ? (
+            <Text style={styles.companyText} numberOfLines={1}>
+              🏛 {mentor.company}
+            </Text>
+          ) : null}
+
+          <Text style={styles.mentorExp}>
+            ★ {mentor.rating ? mentor.rating.toFixed(1) : '4.9'} · Verified Mentor
+          </Text>
+        </View>
+      </View>
+
+      {/* Match Reasons or Expertise Tags */}
+      {reasons && reasons.length > 0 ? (
+        <View style={styles.reasonsContainer}>
+          {reasons.map((reason, idx) => (
+            <View key={idx} style={styles.reasonPill}>
+              <Text style={styles.reasonText}>✓ {reason}</Text>
+            </View>
+          ))}
+        </View>
+      ) : mentor.expertise && mentor.expertise.length > 0 ? (
+        <View style={styles.reasonsContainer}>
+          {mentor.expertise.slice(0, 3).map((exp, idx) => (
+            <View key={idx} style={styles.reasonPill}>
+              <Text style={styles.reasonText}>• {exp}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {/* Action Buttons Row */}
+      <View style={styles.actionRow}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onPress}
+          style={styles.profileBtn}>
+          <Text style={styles.profileBtnText}>View Profile</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={onBook}
+          style={styles.connectButton}>
+          <Text style={styles.connectButtonText}>Connect</Text>
+        </Pressable>
+      </View>
+    </Pressable>
   );
 }
 
@@ -186,7 +390,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,
-    gap: 20,
+    gap: 18,
   },
   header: {
     marginTop: 8,
@@ -218,20 +422,17 @@ const styles = StyleSheet.create({
     color: '#111827',
     padding: 0,
   },
-  section: {
-    gap: 12,
+  categorySection: {
+    marginHorizontal: -20,
   },
-  sectionLabel: {
-    color: '#111827',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  categoryTabsScroll: {
+    paddingHorizontal: 20,
     gap: 8,
   },
-  chip: {
+  categoryTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
@@ -239,23 +440,47 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  chipSelected: {
-    backgroundColor: '#EEF2FF',
+  categoryTabActive: {
+    backgroundColor: '#3B5DF6',
     borderColor: '#3B5DF6',
   },
-  chipText: {
+  categoryTabText: {
     color: '#4B5563',
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  chipTextSelected: {
-    color: '#3B5DF6',
+  categoryTabTextActive: {
+    color: '#FFFFFF',
+  },
+  categoryCountBadge: {
+    backgroundColor: '#E5E7EB',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+  },
+  categoryCountBadgeActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  categoryCountText: {
+    fontSize: 11,
     fontWeight: '700',
+    color: '#6B7280',
+  },
+  categoryCountTextActive: {
+    color: '#FFFFFF',
+  },
+  section: {
+    gap: 12,
   },
   resultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  sectionLabel: {
+    color: '#111827',
+    fontSize: 17,
+    fontWeight: '700',
   },
   matchCountBadge: {
     color: '#6B7280',
@@ -278,16 +503,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  cardPressed: {
+    opacity: 0.95,
+  },
   cardTop: {
     flexDirection: 'row',
     gap: 12,
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   avatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#EEF2FF',
+  },
+  avatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#3B5DF6',
   },
   mentorInfo: {
     flex: 1,
@@ -302,11 +539,13 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontSize: 16,
     fontWeight: '700',
+    flex: 1,
+    marginRight: 6,
   },
   scoreBadge: {
     backgroundColor: '#EEF2FF',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 8,
   },
   scoreText: {
@@ -315,13 +554,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   mentorRole: {
-    color: '#6B7280',
+    color: '#4B5563',
     fontSize: 13,
+    fontWeight: '500',
+  },
+  companyText: {
+    color: '#6B7280',
+    fontSize: 12,
   },
   mentorExp: {
     color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '500',
+    marginTop: 2,
   },
   reasonsContainer: {
     flexDirection: 'row',
@@ -341,16 +586,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  profileBtn: {
+    flex: 1,
+    backgroundColor: '#F3F4F8',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileBtnText: {
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   connectButton: {
+    flex: 1,
     backgroundColor: '#3B5DF6',
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   connectButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 10,
+  },
+  loadingText: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 6,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#374151',
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    maxWidth: 280,
   },
 });
