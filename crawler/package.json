@@ -1,0 +1,36 @@
+{
+  "name": "adelaide-researchers-crawler",
+  "version": "1.0.0",
+  "description": "Web crawler and seed data extractor for Adelaide University researcher profiles",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "crawl": "tsx src/index.ts",
+    "crawl:test": "tsx src/index.ts --start-page 0 --end-page 0 --limit 5",
+    "crawl:page1": "tsx src/index.ts --start-page 0 --end-page 0",
+    "crawl:all": "tsx src/index.ts --start-page 0 --end-page 354",
+    "crawl:resume": "tsx src/index.ts --resume",
+    "seed:backend": "tsx src/seedBackend.ts",
+    "build": "tsc"
+  },
+  "keywords": [
+    "crawler",
+    "scraper",
+    "adelaide-university",
+    "researchers",
+    "seed-data",
+    "mentor"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "commander": "^15.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
