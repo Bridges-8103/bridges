@@ -14,6 +14,7 @@ const PUBLIC_API_PATHS = [
   "/api/health",
   "/api/auth/register",
   "/api/auth/refresh",
+  "/api/taxonomy",
 ];
 
 /**

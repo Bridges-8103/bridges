@@ -11,26 +11,33 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
+import { CompactTagCard } from '@/components/common/compact-tag-card';
 import { calculateMentorMatches, mockMentors } from '@/data/mock-mentors';
+import { useUpdateProfileMutation } from '@/services/profile/mutations';
+import { useProfileQuery } from '@/services/profile/queries';
 import type { MentorMatch, StudentPreferences } from '@/types/matching';
 
-const AVAILABLE_INTERESTS = [
-  'Machine Learning',
-  'Cloud Computing',
-  'Cybersecurity',
-  'Backend',
-  'Design Systems',
-  'Distributed Systems',
-  'Product Strategy',
-  'Python',
-  'Intellectual Property',
-];
-
 export default function ExploreScreen() {
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([
+  const { data: profile } = useProfileQuery();
+  const updateProfileMutation = useUpdateProfileMutation();
+
+  const profileInterests = profile?.studentDetail?.interests;
+  const [localInterests, setLocalInterests] = useState<string[]>([
     'Machine Learning',
     'Python',
   ]);
+
+  const selectedInterests =
+    profileInterests && profileInterests.length > 0 ? profileInterests : localInterests;
+
+  const handleRemoveInterest = (tagToRemove: string) => {
+    const updated = selectedInterests.filter((t) => t !== tagToRemove);
+    setLocalInterests(updated);
+    if (profile?.id) {
+      updateProfileMutation.mutate({ id: profile.id, input: { interests: updated } });
+    }
+  };
+
   const [careerGoal] = useState('AI Research');
   const [industryPreference] = useState('Technology & AI');
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,14 +50,6 @@ export default function ExploreScreen() {
   };
 
   const matches: MentorMatch[] = calculateMentorMatches(currentPreferences, mockMentors);
-
-  const toggleInterest = (interest: string) => {
-    if (selectedInterests.includes(interest)) {
-      setSelectedInterests(selectedInterests.filter((i) => i !== interest));
-    } else {
-      setSelectedInterests([...selectedInterests, interest]);
-    }
-  };
 
   const filteredMatches = matches.filter((item) => {
     if (!searchQuery.trim()) return true;
@@ -107,25 +106,16 @@ export default function ExploreScreen() {
           />
         </View>
 
-        {/* Interests Selector */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Your Interests & Goals</Text>
-          <View style={styles.chipGrid}>
-            {AVAILABLE_INTERESTS.map((interest) => {
-              const isSelected = selectedInterests.includes(interest);
-              return (
-                <Pressable
-                  key={interest}
-                  onPress={() => toggleInterest(interest)}
-                  style={[styles.chip, isSelected && styles.chipSelected]}>
-                  <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
-                    {interest}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        {/* Categorized Interests Selector */}
+        <CompactTagCard
+          title="Your Interests"
+          subtitle="Match with mentors specializing in these fields"
+          selectedTags={selectedInterests}
+          field="interests"
+          onRemoveTag={handleRemoveInterest}
+          color="primary"
+          emptyText="No interests selected. Tap below to find mentors by topic."
+        />
 
         {/* Matchmaking Results */}
         <View style={styles.section}>

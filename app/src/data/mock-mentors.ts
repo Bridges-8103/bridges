@@ -3,28 +3,40 @@ import type { FieldCategory, UpcomingSession } from '@/types/home';
 
 export const mockFieldCategories: FieldCategory[] = [
   {
-    id: 'engineering',
-    title: 'Engineering',
-    icon: '⚙️',
-    bgColor: '#F3F4F8',
-  },
-  {
-    id: 'design',
-    title: 'Design',
-    icon: '🎨',
-    bgColor: '#FFF1F2',
-  },
-  {
-    id: 'finance',
-    title: 'Finance',
-    icon: '📈',
+    id: 'tech-engineering',
+    title: 'Tech & Engineering',
+    icon: '💻',
     bgColor: '#EFF6FF',
   },
   {
-    id: 'medicine',
-    title: 'Medicine',
+    id: 'health-medicine',
+    title: 'Health & Medicine',
     icon: '🩺',
     bgColor: '#F5F3FF',
+  },
+  {
+    id: 'science-environment',
+    title: 'Natural Sciences',
+    icon: '🌱',
+    bgColor: '#F0FDF4',
+  },
+  {
+    id: 'business-law',
+    title: 'Business & Law',
+    icon: '📈',
+    bgColor: '#FFFBEB',
+  },
+  {
+    id: 'education-society',
+    title: 'Education & Social',
+    icon: '📚',
+    bgColor: '#F3F4F6',
+  },
+  {
+    id: 'arts-design',
+    title: 'Arts & Design',
+    icon: '🎨',
+    bgColor: '#FFF1F2',
   },
 ];
 

@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { ChipToggle } from '@/components/mentor-profile/chip-toggle';
+import { CompactTagCard } from '@/components/common/compact-tag-card';
 import { LabeledInput } from '@/components/mentor-profile/labeled-input';
 import { LabeledTextarea } from '@/components/mentor-profile/labeled-textarea';
 import { PrimaryButton } from '@/components/mentor-profile/primary-button';
@@ -28,60 +28,9 @@ import { useTheme } from '@/hooks/use-theme';
 import { useCreateProfileMutation, useUpdateProfileMutation } from '@/services/profile/mutations';
 import { useProfileQuery } from '@/services/profile/queries';
 import type { UserProfile } from '@/services/profile/types';
-import type { SocialLinks, Tag } from '@/types/mentor-profile';
+import type { SocialLinks } from '@/types/mentor-profile';
 
 const BIO_MAX_LENGTH = 250;
-
-const DEFAULT_STUDENT_SKILLS: Tag[] = [
-  { id: 'react', label: 'React', selected: true },
-  { id: 'typescript', label: 'TypeScript', selected: true },
-  { id: 'python', label: 'Python', selected: true },
-  { id: 'react-native', label: 'React Native', selected: false },
-  { id: 'java', label: 'Java', selected: false },
-  { id: 'c-plus-plus', label: 'C++', selected: false },
-  { id: 'swift', label: 'Swift & iOS', selected: false },
-  { id: 'machine-learning', label: 'Machine Learning', selected: false },
-  { id: 'ai-engineering', label: 'AI Engineering', selected: false },
-  { id: 'data-analysis', label: 'Data Analysis', selected: false },
-  { id: 'sql-databases', label: 'SQL & Databases', selected: false },
-  { id: 'cloud-devops', label: 'Cloud & DevOps', selected: false },
-  { id: 'system-design', label: 'System Design', selected: false },
-  { id: 'product-management', label: 'Product Management', selected: false },
-  { id: 'ui-ux-design', label: 'UI/UX Design', selected: false },
-  { id: 'cybersecurity', label: 'Cybersecurity', selected: false },
-  { id: 'public-speaking', label: 'Public Speaking', selected: false },
-];
-
-const DEFAULT_INTERESTS: Tag[] = [
-  { id: 'ai-ml', label: 'AI & ML', selected: true },
-  { id: 'startups', label: 'Startups & Ventures', selected: true },
-  { id: 'career-growth', label: 'Career Growth', selected: true },
-  { id: 'open-source', label: 'Open Source', selected: false },
-  { id: 'fintech', label: 'FinTech', selected: false },
-  { id: 'healthtech', label: 'HealthTech & Bio', selected: false },
-  { id: 'climate-tech', label: 'Climate & CleanTech', selected: false },
-  { id: 'web3', label: 'Web3 & Crypto', selected: false },
-  { id: 'product-strategy', label: 'Product Strategy', selected: false },
-  { id: 'design-creative', label: 'Design & Creative', selected: false },
-  { id: 'venture-capital', label: 'Venture Capital', selected: false },
-  { id: 'academic-research', label: 'Academic Research', selected: false },
-  { id: 'social-impact', label: 'Social Impact', selected: false },
-];
-
-const DEFAULT_MENTOR_EXPERTISE: Tag[] = [
-  { id: 'system-architecture', label: 'System Architecture', selected: true },
-  { id: 'career-coaching', label: 'Career Coaching', selected: true },
-  { id: 'interview-prep', label: 'Interview Prep', selected: true },
-  { id: 'resume-review', label: 'Resume & Portfolio Review', selected: true },
-  { id: 'frontend-dev', label: 'Frontend Development', selected: false },
-  { id: 'backend-distributed', label: 'Backend & Distributed Systems', selected: false },
-  { id: 'cloud-devops', label: 'Cloud & DevOps', selected: false },
-  { id: 'team-leadership', label: 'Engineering Leadership', selected: false },
-  { id: 'ai-engineering', label: 'AI Engineering & LLMs', selected: false },
-  { id: 'product-strategy', label: 'Product Strategy & Roadmaps', selected: false },
-  { id: 'startup-pitching', label: 'Startup Pitching & Funding', selected: false },
-  { id: 'cross-functional', label: 'Cross-Functional Collaboration', selected: false },
-];
 
 export default function MentorProfileScreen() {
   const {
@@ -135,7 +84,7 @@ export default function MentorProfileScreen() {
 
   return (
     <AdaptiveProfileForm
-      key={profile?.id ?? 'new-profile'}
+      key={profile?.updatedAt ? `${profile.id}-${profile.updatedAt}` : (profile?.id ?? 'new-profile')}
       profile={profile}
       params={params}
     />
@@ -192,36 +141,46 @@ function AdaptiveProfileForm({
     String(profile?.mentorDetail?.yearsExperience || '5')
   );
 
-  // Tags
-  const [skills, setSkills] = useState<Tag[]>(() => {
-    if (profile?.studentDetail?.skills?.length) {
-      return DEFAULT_STUDENT_SKILLS.map((tag) => ({
-        ...tag,
-        selected: profile.studentDetail!.skills.includes(tag.label),
-      }));
-    }
-    return DEFAULT_STUDENT_SKILLS;
-  });
+  // Tags: prioritize server cache from profile, fallback to local state for new profiles
+  const [skills, setSkills] = useState<string[]>(
+    () => profile?.studentDetail?.skills || ['Python', 'Data Analysis']
+  );
 
-  const [interests, setInterests] = useState<Tag[]>(() => {
-    if (profile?.studentDetail?.interests?.length) {
-      return DEFAULT_INTERESTS.map((tag) => ({
-        ...tag,
-        selected: profile.studentDetail!.interests.includes(tag.label),
-      }));
-    }
-    return DEFAULT_INTERESTS;
-  });
+  const [interests, setInterests] = useState<string[]>(
+    () => profile?.studentDetail?.interests || ['Artificial Intelligence', 'Machine learning']
+  );
 
-  const [expertise, setExpertise] = useState<Tag[]>(() => {
-    if (profile?.mentorDetail?.expertise?.length) {
-      return DEFAULT_MENTOR_EXPERTISE.map((tag) => ({
-        ...tag,
-        selected: profile.mentorDetail!.expertise.includes(tag.label),
-      }));
+  const [expertise, setExpertise] = useState<string[]>(
+    () => profile?.mentorDetail?.expertise || ['Artificial Intelligence', 'Software Engineering']
+  );
+
+  const currentSkills = profile?.studentDetail?.skills ?? skills;
+  const currentInterests = profile?.studentDetail?.interests ?? interests;
+  const currentExpertise = profile?.mentorDetail?.expertise ?? expertise;
+
+  const handleRemoveSkill = (tagToRemove: string) => {
+    const updated = currentSkills.filter((s) => s !== tagToRemove);
+    setSkills(updated);
+    if (profile?.id) {
+      updateProfileMutation.mutate({ id: profile.id, input: { skills: updated } });
     }
-    return DEFAULT_MENTOR_EXPERTISE;
-  });
+  };
+
+  const handleRemoveInterest = (tagToRemove: string) => {
+    const updated = currentInterests.filter((s) => s !== tagToRemove);
+    setInterests(updated);
+    if (profile?.id) {
+      updateProfileMutation.mutate({ id: profile.id, input: { interests: updated } });
+    }
+  };
+
+  const handleRemoveExpertise = (tagToRemove: string) => {
+    const updated = currentExpertise.filter((s) => s !== tagToRemove);
+    setExpertise(updated);
+    if (profile?.id) {
+      updateProfileMutation.mutate({ id: profile.id, input: { expertise: updated } });
+    }
+  };
 
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({
     linkedin: profile?.mentorDetail?.linkedinUrl || '',
@@ -229,19 +188,15 @@ function AdaptiveProfileForm({
     twitter: '',
   });
 
-  const toggleTag = (list: Tag[], setList: (tags: Tag[]) => void, id: string) => {
-    setList(list.map((tag) => (tag.id === id ? { ...tag, selected: !tag.selected } : tag)));
-  };
-
   const handleSave = async () => {
     if (!fullName.trim()) {
       Alert.alert('Missing Name', 'Please provide your full name.');
       return;
     }
 
-    const selectedSkills = skills.filter((s) => s.selected).map((s) => s.label);
-    const selectedInterests = interests.filter((i) => i.selected).map((i) => i.label);
-    const selectedExpertise = expertise.filter((e) => e.selected).map((e) => e.label);
+    const selectedSkills = currentSkills;
+    const selectedInterests = currentInterests;
+    const selectedExpertise = currentExpertise;
 
     const yearNumber = parseInt(year.replace(/[^0-9]/g, ''), 10) || 1;
     const expNumber = parseInt(yearsExperience.replace(/[^0-9]/g, ''), 10) || 1;
@@ -438,33 +393,25 @@ function AdaptiveProfileForm({
               />
             </SectionCard>
 
-            <SectionCard title="Skills" subtitle="Tap to add or remove skills">
-              <View style={styles.chipRow}>
-                {skills.map((tag) => (
-                  <ChipToggle
-                    key={tag.id}
-                    label={tag.label}
-                    selected={tag.selected}
-                    color="primary"
-                    onPress={() => toggleTag(skills, setSkills, tag.id)}
-                  />
-                ))}
-              </View>
-            </SectionCard>
+            <CompactTagCard
+              title="Skills"
+              subtitle="Tools, languages & capabilities you want to develop"
+              selectedTags={currentSkills}
+              field="skills"
+              onRemoveTag={handleRemoveSkill}
+              color="primary"
+              emptyText="No skills selected yet. Tap below to choose."
+            />
 
-            <SectionCard title="Interests" subtitle="Areas you want to explore">
-              <View style={styles.chipRow}>
-                {interests.map((tag) => (
-                  <ChipToggle
-                    key={tag.id}
-                    label={tag.label}
-                    selected={tag.selected}
-                    color="accentPurple"
-                    onPress={() => toggleTag(interests, setInterests, tag.id)}
-                  />
-                ))}
-              </View>
-            </SectionCard>
+            <CompactTagCard
+              title="Interests"
+              subtitle="Fields and research topics you want to explore"
+              selectedTags={currentInterests}
+              field="interests"
+              onRemoveTag={handleRemoveInterest}
+              color="accentPurple"
+              emptyText="No interests selected yet. Tap below to choose."
+            />
           </>
         )}
 
@@ -505,19 +452,15 @@ function AdaptiveProfileForm({
               </View>
             </SectionCard>
 
-            <SectionCard title="Mentorship Expertise" subtitle="Topics you can guide students on">
-              <View style={styles.chipRow}>
-                {expertise.map((tag) => (
-                  <ChipToggle
-                    key={tag.id}
-                    label={tag.label}
-                    selected={tag.selected}
-                    color="accentPurple"
-                    onPress={() => toggleTag(expertise, setExpertise, tag.id)}
-                  />
-                ))}
-              </View>
-            </SectionCard>
+            <CompactTagCard
+              title="Mentorship Expertise"
+              subtitle="Topics you can guide students on"
+              selectedTags={currentExpertise}
+              field="expertise"
+              onRemoveTag={handleRemoveExpertise}
+              color="accentPurple"
+              emptyText="No expertise topics selected yet. Tap below to choose."
+            />
 
             <SectionCard title="Social Links">
               <SocialLinkInput

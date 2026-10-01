@@ -257,6 +257,7 @@ export class ProfileService {
         role: data.role ? (role as "STUDENT" | "MENTOR") : undefined,
         bio: data.bio !== undefined ? data.bio : undefined,
         phoneNumber: data.phoneNumber !== undefined ? data.phoneNumber : undefined,
+        updatedAt: new Date(),
       },
     });
 

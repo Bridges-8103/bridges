@@ -115,3 +115,49 @@ model Report {
   @@index([reporterId])
   @@index([status])
 }
+
+// ==========================================
+// TAXONOMY (CATEGORIES & TAGS)
+// ==========================================
+
+enum TagType {
+  INTEREST
+  SKILL
+  BOTH
+}
+
+model Category {
+  id          Int           @id @default(autoincrement())
+  slug        String        @unique
+  name        String
+  icon        String
+  sortOrder   Int           @default(0)
+  mentorCount Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tags        TaxonomyTag[]
+
+  @@index([slug])
+}
+
+model TaxonomyTag {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
+  name        String
+  type        TagType   @default(BOTH)
+  isCurated   Boolean   @default(false)
+  mentorCount Int       @default(0)
+  aliases     String[]  @default([])
+
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([categoryId])
+  @@index([type])
+  @@index([mentorCount])
+  @@index([isCurated])
+}

@@ -8,6 +8,7 @@ export const ROUTES = {
   SIGN_UP: '/sign-up',
   TABS: '/(tabs)',
   MENTOR_PROFILE: '/mentor-profile',
+  SELECT_TAGS: '/select-tags',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
@@ -24,6 +25,7 @@ export const ROUTE_SEGMENTS = {
   SIGN_UP: 'sign-up',
   TABS: '(tabs)',
   MENTOR_PROFILE: 'mentor-profile',
+  SELECT_TAGS: 'select-tags',
 } as const;
 
 export type RouteSegment = (typeof ROUTE_SEGMENTS)[keyof typeof ROUTE_SEGMENTS];
@@ -51,6 +53,7 @@ export const AUTH_ROUTE_SEGMENTS: readonly RouteSegment[] = [
 export const PROTECTED_ROUTE_SEGMENTS: readonly RouteSegment[] = [
   ROUTE_SEGMENTS.TABS,
   ROUTE_SEGMENTS.MENTOR_PROFILE,
+  ROUTE_SEGMENTS.SELECT_TAGS,
 ] as const;
 
 /**
@@ -63,6 +66,7 @@ export const ROUTE_ACCESS_MAP: Record<RouteSegment, RouteAccessType> = {
   [ROUTE_SEGMENTS.SIGN_UP]: 'auth',
   [ROUTE_SEGMENTS.TABS]: 'protected',
   [ROUTE_SEGMENTS.MENTOR_PROFILE]: 'protected',
+  [ROUTE_SEGMENTS.SELECT_TAGS]: 'protected',
 };
 
 /**

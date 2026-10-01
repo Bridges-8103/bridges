@@ -28,7 +28,11 @@ export function useUpdateProfileMutation(
       return updateProfile(variables);
     },
     onSuccess: async (...args) => {
-      await queryClient.invalidateQueries({ queryKey: profileKeys.current() });
+      const [data] = args;
+      if (data) {
+        queryClient.setQueryData(profileKeys.current(), data);
+      }
+      await queryClient.invalidateQueries({ queryKey: profileKeys.all, refetchType: 'all' });
       await options?.onSuccess?.(...args);
     },
   });
@@ -46,7 +50,11 @@ export function useCreateProfileMutation(
     ...options,
     mutationFn: createProfile,
     onSuccess: async (...args) => {
-      await queryClient.invalidateQueries({ queryKey: profileKeys.current() });
+      const [data] = args;
+      if (data) {
+        queryClient.setQueryData(profileKeys.current(), data);
+      }
+      await queryClient.invalidateQueries({ queryKey: profileKeys.all, refetchType: 'all' });
       await options?.onSuccess?.(...args);
     },
   });
