@@ -12,6 +12,8 @@
     "crawl:all": "tsx src/index.ts --start-page 0 --end-page 354",
     "crawl:resume": "tsx src/index.ts --resume",
     "seed:backend": "tsx src/seedBackend.ts",
+    "sync:clerk": "tsx src/syncClerkMentors.ts",
+    "upload:avatars": "tsx src/uploadAvatars.ts",
     "build": "tsc"
   },
   "keywords": [
@@ -25,8 +27,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1144.0",
+    "@aws-sdk/s3-request-presigner": "^3.1144.0",
+    "@clerk/backend": "^3.21.1",
+    "@prisma/client": "^5.22.0",
     "cheerio": "^1.2.0",
-    "commander": "^15.0.0"
+    "commander": "^15.0.0",
+    "dotenv": "^18.0.5"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

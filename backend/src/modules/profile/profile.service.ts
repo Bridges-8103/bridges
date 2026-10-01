@@ -34,6 +34,7 @@ type PrismaUserWithDetails = {
     expertise: string[];
     preferredEnquiries: string[];
     linkedinUrl: string | null;
+    contactEmail: string | null;
   } | null;
 };
 
@@ -67,6 +68,7 @@ function mapUserToProfile(user: PrismaUserWithDetails): Profile {
           expertise: user.mentorDetail.expertise || [],
           preferredEnquiries: user.mentorDetail.preferredEnquiries || [],
           linkedinUrl: user.mentorDetail.linkedinUrl,
+          contactEmail: user.mentorDetail.contactEmail,
         }
       : null,
     createdAt: user.createdAt.toISOString(),
@@ -195,6 +197,7 @@ export class ProfileService {
           expertise: data.expertise || [],
           preferredEnquiries: data.preferredEnquiries || [],
           linkedinUrl: data.linkedinUrl || null,
+          contactEmail: data.contactEmail || null,
         },
         update: {
           jobTitle: data.jobTitle !== undefined ? data.jobTitle : undefined,
@@ -204,6 +207,7 @@ export class ProfileService {
           expertise: data.expertise !== undefined ? data.expertise : undefined,
           preferredEnquiries: data.preferredEnquiries !== undefined ? data.preferredEnquiries : undefined,
           linkedinUrl: data.linkedinUrl !== undefined ? data.linkedinUrl : undefined,
+          contactEmail: data.contactEmail !== undefined ? data.contactEmail : undefined,
         },
       });
     }
@@ -291,6 +295,7 @@ export class ProfileService {
           expertise: data.expertise || [],
           preferredEnquiries: data.preferredEnquiries || [],
           linkedinUrl: data.linkedinUrl || null,
+          contactEmail: data.contactEmail || null,
         },
         update: {
           jobTitle: data.jobTitle !== undefined ? data.jobTitle : undefined,
@@ -300,6 +305,7 @@ export class ProfileService {
           expertise: data.expertise !== undefined ? data.expertise : undefined,
           preferredEnquiries: data.preferredEnquiries !== undefined ? data.preferredEnquiries : undefined,
           linkedinUrl: data.linkedinUrl !== undefined ? data.linkedinUrl : undefined,
+          contactEmail: data.contactEmail !== undefined ? data.contactEmail : undefined,
         },
       });
     }

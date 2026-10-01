@@ -3,11 +3,15 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.report.deleteMany({});
-  await prisma.user.deleteMany({});
-
-  const student = await prisma.user.create({
-    data: {
+  const student = await prisma.user.upsert({
+    where: { email: 'alex@example.com' },
+    update: {
+      name: 'Alex Johnson',
+      role: 'STUDENT',
+      isSuspended: false,
+      verificationStatus: 'APPROVED',
+    },
+    create: {
       name: 'Alex Johnson',
       email: 'alex@example.com',
       role: 'STUDENT',
@@ -16,8 +20,15 @@ async function main() {
     },
   });
 
-  const reportedUser = await prisma.user.create({
-    data: {
+  const reportedUser = await prisma.user.upsert({
+    where: { email: 'michael@example.com' },
+    update: {
+      name: 'Michael Scott',
+      role: 'STUDENT',
+      isSuspended: false,
+      verificationStatus: 'PENDING',
+    },
+    create: {
       name: 'Michael Scott',
       email: 'michael@example.com',
       role: 'STUDENT',

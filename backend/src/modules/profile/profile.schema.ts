@@ -18,6 +18,7 @@ export const mentorDetailSchema = z.object({
   expertise: z.array(z.string()).default([]),
   preferredEnquiries: z.array(z.string()).default([]),
   linkedinUrl: z.string().nullable().optional(),
+  contactEmail: z.string().nullable().optional(),
 });
 
 /**
@@ -50,6 +51,7 @@ export const createProfileSchema = z
     expertise: z.array(z.string()).optional(),
     preferredEnquiries: z.array(z.string()).optional(),
     linkedinUrl: z.string().optional(),
+    contactEmail: z.string().optional(),
   })
   .meta({
     id: "CreateProfileInput",
@@ -94,6 +96,7 @@ export const updateProfileSchema = z
     expertise: z.array(z.string()).optional(),
     preferredEnquiries: z.array(z.string()).optional(),
     linkedinUrl: z.string().optional(),
+    contactEmail: z.string().optional(),
   })
   .meta({
     id: "UpdateProfileInput",

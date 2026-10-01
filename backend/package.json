@@ -23,6 +23,8 @@
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1144.0",
+    "@aws-sdk/s3-request-presigner": "^3.1144.0",
     "@clerk/nextjs": "^7.9.2",
     "@prisma/client": "^5.22.0",
     "@scalar/api-reference-react": "^0.9.71",
