@@ -16,17 +16,44 @@ import {
   UnauthorizedError,
 } from "@/lib/errors";
 import { type AuthUser } from "@/lib/auth";
+import { resolveClerkUser } from "@/lib/clerkUser";
 
 export class SessionsService {
   /**
    * Resolves the authenticated user (Clerk or local) to a Prisma User record.
    */
   static async resolveDbUser(authUser: AuthUser) {
-    if (authUser.email) {
+    console.log(
+      `[SessionsService.resolveDbUser] Resolving user: id=${authUser.id}, email=${authUser.email}, role=${authUser.role || 'none'}`
+    );
+
+    let email = authUser.email;
+    let role = authUser.role;
+
+    // If email is missing or placeholder @clerk.user, attempt Clerk API resolution for Clerk user IDs
+    if ((!email || email.endsWith("@clerk.user")) && authUser.id.startsWith("user_")) {
+      const clerkResolved = await resolveClerkUser(authUser.id);
+      if (clerkResolved?.email) {
+        email = clerkResolved.email;
+        if (!role && clerkResolved.role) {
+          role = clerkResolved.role;
+        }
+        console.log(
+          `[SessionsService.resolveDbUser] Resolved real email from Clerk: ${email}, role: ${role || 'none'}`
+        );
+      }
+    }
+
+    if (email && !email.endsWith("@clerk.user")) {
       const user = await prisma.user.findUnique({
-        where: { email: authUser.email },
+        where: { email },
       });
-      if (user) return user;
+      if (user) {
+        console.log(
+          `[SessionsService.resolveDbUser] Found user by email (${email}): id=${user.id}, role=${user.role}`
+        );
+        return user;
+      }
     }
 
     const numId = parseInt(authUser.id, 10);
@@ -34,21 +61,33 @@ export class SessionsService {
       const user = await prisma.user.findUnique({
         where: { id: numId },
       });
-      if (user) return user;
+      if (user) {
+        console.log(
+          `[SessionsService.resolveDbUser] Found user by numId (${numId}): id=${user.id}, role=${user.role}`
+        );
+        return user;
+      }
     }
 
-    // Auto-provision user if email exists
-    if (authUser.email) {
+    // Auto-provision user only if a REAL email exists (never placeholder @clerk.user)
+    if (email && !email.endsWith("@clerk.user")) {
+      console.log(
+        `[SessionsService.resolveDbUser] Auto-provisioning new user for email=${email}, role=${role || 'STUDENT'}`
+      );
       const newUser = await prisma.user.create({
         data: {
-          email: authUser.email,
-          name: authUser.email.split("@")[0],
-          role: authUser.role === "MENTOR" ? "MENTOR" : "STUDENT",
+          email,
+          name: email.split("@")[0],
+          role: role === "MENTOR" ? "MENTOR" : "STUDENT",
         },
       });
       return newUser;
     }
 
+    console.warn(
+      `[SessionsService.resolveDbUser] Unable to resolve authenticated user record:`,
+      authUser
+    );
     throw new UnauthorizedError("Unable to resolve authenticated user record.");
   }
   /**
@@ -152,39 +191,45 @@ export class SessionsService {
     mentorUserId: number,
     input: SetAvailabilityInput
   ): Promise<{ updatedCount: number }> {
-    let updatedCount = 0;
+    const startTimes = input.slots.map((s) => new Date(s.startTime));
 
-    await prisma.$transaction(async (tx) => {
-      for (const item of input.slots) {
+    // 1. Fetch all existing slots in one query to check for active bookings
+    const existingSlots = await prisma.sessionSlot.findMany({
+      where: {
+        mentorId: mentorUserId,
+        startTime: { in: startTimes },
+      },
+      include: { booking: true },
+    });
+
+    for (const item of input.slots) {
+      const start = new Date(item.startTime);
+      const match = existingSlots.find(
+        (s) => s.startTime.getTime() === start.getTime()
+      );
+
+      if (
+        match?.booking &&
+        (match.booking.status === BookingStatus.PENDING ||
+          match.booking.status === BookingStatus.CONFIRMED)
+      ) {
+        if (!item.isAvailable) {
+          throw new ConflictError(
+            `Cannot remove availability for slot at ${start.toISOString()} because it already has an active booking request.`
+          );
+        }
+      }
+    }
+
+    // 2. Upsert slots in parallel without holding an interactive transaction open
+    const results = await Promise.all(
+      input.slots.map((item) => {
         const start = new Date(item.startTime);
         const end = item.endTime
           ? new Date(item.endTime)
           : new Date(start.getTime() + SESSION_CONFIG.SLOT_DURATION_MINUTES * 60 * 1000);
 
-        // Check if there is an existing active booking for this slot
-        const existingSlot = await tx.sessionSlot.findUnique({
-          where: {
-            mentorId_startTime: {
-              mentorId: mentorUserId,
-              startTime: start,
-            },
-          },
-          include: { booking: true },
-        });
-
-        if (
-          existingSlot?.booking &&
-          (existingSlot.booking.status === BookingStatus.PENDING ||
-            existingSlot.booking.status === BookingStatus.CONFIRMED)
-        ) {
-          if (!item.isAvailable) {
-            throw new ConflictError(
-              `Cannot remove availability for slot at ${start.toISOString()} because it already has an active booking request.`
-            );
-          }
-        }
-
-        await tx.sessionSlot.upsert({
+        return prisma.sessionSlot.upsert({
           where: {
             mentorId_startTime: {
               mentorId: mentorUserId,
@@ -202,12 +247,10 @@ export class SessionsService {
             isAvailable: item.isAvailable,
           },
         });
+      })
+    );
 
-        updatedCount++;
-      }
-    });
-
-    return { updatedCount };
+    return { updatedCount: results.length };
   }
 
   /**
