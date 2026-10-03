@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -13,14 +13,12 @@ import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { FieldCategoryCard } from '@/components/home/field-category-card';
 import { MentorCard } from '@/components/home/mentor-card';
-import { NextSessionCard } from '@/components/home/next-session-card';
-import { SearchBar } from '@/components/home/search-bar';
-import { mockFieldCategories, mockNextSession } from '@/data/mock-mentors';
-import { useAuth } from '@/hooks/use-auth';
+import { mockFieldCategories } from '@/data/mock-mentors';
 import { ROUTES } from '@/constants/routes';
-import { useProfileQuery } from '@/services/profile/queries';
+import { useRole } from '@/hooks/use-role';
 import { useSuggestedMentorsQuery, useMentorsQuery } from '@/services/mentors/queries';
 import { useTaxonomyQuery } from '@/services/taxonomy/queries';
+import { useBookingsQuery } from '@/services/sessions/queries';
 
 const CATEGORY_ICONS: Record<string, string> = {
   'tech-engineering': '💻',
@@ -31,22 +29,35 @@ const CATEGORY_ICONS: Record<string, string> = {
   'arts-design': '🎨',
 };
 
+function formatNextSessionDate(startTimeIso: string): string {
+  const d = new Date(startTimeIso);
+  const dateStr = d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const timeStr = d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  return `${dateStr} · ${timeStr}`;
+}
+
 export default function HomeScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const {
-    data: profile,
-    isError: isProfileError,
-    error: profileError,
-    refetch: refetchProfile,
-    isRefetching,
-    isSuccess: isProfileSuccess,
-  } = useProfileQuery();
+  const { user, profile, isMentor, isStudent } = useRole();
 
   // Fetch real taxonomy categories from backend
   const { data: taxonomyCategories = [] } = useTaxonomyQuery();
 
-  const [searchQuery, setSearchQuery] = useState('');
+  // Fetch bookings based on active role
+  const { data: bookings = [] } = useBookingsQuery(isMentor ? 'MENTOR' : 'STUDENT');
+
+  const pendingMentorRequests = isMentor ? bookings.filter((b) => b.status === 'PENDING') : [];
+  const confirmedSessions = bookings.filter((b) => b.status === 'CONFIRMED');
+  const nextSession = confirmedSessions[0];
+
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const studentInterests = profile?.studentDetail?.interests ?? [];
@@ -58,8 +69,8 @@ export default function HomeScreen() {
     isLoading: isSuggestionsLoading,
   } = useSuggestedMentorsQuery(studentInterests, 12);
 
-  // If a category filter or search query is active, query filtered database mentors
-  const isFiltering = Boolean(selectedCategory || searchQuery.trim());
+  // If a category filter is active, query filtered database mentors
+  const isFiltering = Boolean(selectedCategory);
   const {
     data: filteredResult,
     isLoading: isFilteredLoading,
@@ -67,24 +78,13 @@ export default function HomeScreen() {
     isFiltering
       ? {
           category: selectedCategory ?? undefined,
-          search: searchQuery.trim() || undefined,
           limit: 12,
         }
       : undefined,
     { enabled: isFiltering }
   );
 
-  // Redirect to setup profile if first time
-  useEffect(() => {
-    if (isProfileSuccess && profile === null) {
-      router.replace({
-        pathname: ROUTES.MENTOR_PROFILE,
-        params: { isNew: 'true' },
-      });
-    }
-  }, [isProfileSuccess, profile, router]);
-
-  const userName = profile?.displayName || user?.name || 'Friend';
+  const userName = profile?.displayName || user?.name || (isMentor ? 'Mentor' : 'Student');
   const userAvatar =
     profile?.avatarUrl ||
     user?.avatarUri ||
@@ -111,7 +111,22 @@ export default function HomeScreen() {
         {/* Top Greeting Header */}
         <View style={styles.headerRow}>
           <View style={styles.greetingTextContainer}>
-            <Text style={styles.eyebrow}>Good morning,</Text>
+            <View style={styles.eyebrowRow}>
+              <Text style={styles.eyebrow}>Good morning,</Text>
+              <View
+                style={[
+                  styles.roleBadge,
+                  isMentor ? styles.roleBadgeMentor : styles.roleBadgeStudent,
+                ]}>
+                <Text
+                  style={[
+                    styles.roleBadgeText,
+                    isMentor ? styles.roleBadgeTextMentor : styles.roleBadgeTextStudent,
+                  ]}>
+                  {isMentor ? '🌟 Mentor' : '🎓 Student'}
+                </Text>
+              </View>
+            </View>
             <Text style={styles.userName}>{userName} 👋</Text>
           </View>
 
@@ -125,44 +140,136 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Display card if API call to profile is error */}
-        {isProfileError && (
-          <View style={styles.errorCard}>
-            <View style={styles.errorCardHeader}>
-              <SymbolView
-                name={{ ios: 'exclamationmark.triangle.fill', android: 'warning', web: 'warning' }}
-                size={18}
-                tintColor="#DC2626"
-              />
-              <Text style={styles.errorCardTitle}>Cannot fetch profile</Text>
+        {/* MENTOR ROLE: INCOMING STUDENT REQUESTS & SHORTCUTS */}
+        {isMentor && (
+          <View style={styles.mentorHubContainer}>
+            {/* Pending Requests Alert */}
+            {pendingMentorRequests.length > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/(tabs)/sessions')}
+                style={({ pressed }) => [styles.pendingAlertCard, pressed && styles.pressed]}>
+                <View style={styles.pendingAlertIconWrap}>
+                  <SymbolView
+                    name={{ ios: 'bell.badge.fill', android: 'notifications', web: 'notifications' }}
+                    size={22}
+                    tintColor="#D97706"
+                  />
+                </View>
+                <View style={styles.pendingAlertContent}>
+                  <Text style={styles.pendingAlertTitle}>
+                    {pendingMentorRequests.length} Student {pendingMentorRequests.length === 1 ? 'Request' : 'Requests'} Waiting
+                  </Text>
+                  <Text style={styles.pendingAlertSub}>
+                    Students have booked session slots with you. Tap to review and accept.
+                  </Text>
+                </View>
+                <SymbolView
+                  name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                  size={16}
+                  tintColor="#D97706"
+                />
+              </Pressable>
+            ) : null}
+
+            {/* Upcoming confirmed session if any */}
+            {nextSession ? (
+              <View style={styles.nextSessionCardMentor}>
+                <View style={styles.nextSessionHeader}>
+                  <View style={styles.nextSessionPill}>
+                    <Text style={styles.nextSessionPillText}>Next Student Mentorship</Text>
+                  </View>
+                  <Text style={styles.nextSessionDate}>
+                    {formatNextSessionDate(nextSession.slot.startTime)}
+                  </Text>
+                </View>
+                <Text style={styles.nextSessionStudentName}>
+                  Mentee: {nextSession.student?.name || 'Student'}
+                </Text>
+                <Text numberOfLines={2} style={styles.nextSessionTopic}>
+                  Topic: {nextSession.topic}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push('/(tabs)/sessions')}
+                  style={styles.nextSessionActionBtn}>
+                  <Text style={styles.nextSessionActionBtnText}>Manage in Sessions</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {/* Quick Actions Hub for Mentors */}
+            <View style={styles.mentorQuickActionsRow}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push(ROUTES.MENTOR_AVAILABILITY)}
+                style={({ pressed }) => [styles.mentorQuickCard, pressed && styles.pressed]}>
+                <View style={[styles.mentorQuickIcon, { backgroundColor: '#EFF6FF' }]}>
+                  <SymbolView
+                    name={{
+                      ios: 'calendar.badge.clock',
+                      android: 'event_available',
+                      web: 'event_available',
+                    }}
+                    size={20}
+                    tintColor="#3B5DF6"
+                  />
+                </View>
+                <Text style={styles.mentorQuickTitle}>Set Availability</Text>
+                <Text style={styles.mentorQuickSub}>Manage 30-min booking slots</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push('/(tabs)/sessions')}
+                style={({ pressed }) => [styles.mentorQuickCard, pressed && styles.pressed]}>
+                <View style={[styles.mentorQuickIcon, { backgroundColor: '#F3EEFF' }]}>
+                  <SymbolView
+                    name={{ ios: 'calendar', android: 'calendar_today', web: 'calendar_today' }}
+                    size={20}
+                    tintColor="#7C3AED"
+                  />
+                </View>
+                <Text style={styles.mentorQuickTitle}>Student Sessions</Text>
+                <Text style={styles.mentorQuickSub}>
+                  {bookings.length} total scheduled
+                </Text>
+              </Pressable>
             </View>
-            <Text style={styles.errorCardText}>
-              {profileError?.message ||
-                'Unable to retrieve your profile information. Please check your connection and try again.'}
+          </View>
+        )}
+
+        {/* STUDENT ROLE: UPCOMING SESSION HIGHLIGHT */}
+        {isStudent && nextSession && (
+          <View style={styles.nextSessionCardStudent}>
+            <View style={styles.nextSessionHeader}>
+              <View style={styles.nextSessionPillStudent}>
+                <Text style={styles.nextSessionPillTextStudent}>Upcoming Mentorship</Text>
+              </View>
+              <Text style={styles.nextSessionDateStudent}>
+                {formatNextSessionDate(nextSession.slot.startTime)}
+              </Text>
+            </View>
+            <Text style={styles.nextSessionStudentName}>
+              Mentor: {nextSession.mentor?.name || 'Mentor'}
+            </Text>
+            <Text numberOfLines={1} style={styles.nextSessionTopic}>
+              {nextSession.topic}
             </Text>
             <Pressable
               accessibilityRole="button"
-              disabled={isRefetching}
-              onPress={() => refetchProfile()}
-              style={({ pressed }) => [styles.retryButton, pressed && styles.pressed]}>
-              <Text style={styles.retryButtonText}>{isRefetching ? 'Retrying…' : 'Retry'}</Text>
+              onPress={() => router.push('/(tabs)/sessions')}
+              style={styles.nextSessionStudentBtn}>
+              <Text style={styles.nextSessionStudentBtnText}>View in My Sessions</Text>
             </Pressable>
           </View>
         )}
 
-        {/* Search Bar */}
-        <View style={styles.searchSection}>
-          <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
-        </View>
-
-        {/* Next Session Banner Card */}
-        <View style={styles.bannerSection}>
-          <NextSessionCard session={mockNextSession} />
-        </View>
-
-        {/* Browse by Field Section (backed by live Taxonomy) */}
+        {/* Section: Browse by Field */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Browse by field</Text>
+          <Text style={styles.sectionTitle}>
+            {isMentor ? 'Browse academic fields' : 'Browse by field'}
+          </Text>
           <Pressable
             onPress={() => {
               setSelectedCategory(null);
@@ -172,7 +279,11 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.categoriesRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoriesContainer}
+          contentContainerStyle={styles.categoriesScroll}>
           {displayCategories.map((category) => (
             <FieldCategoryCard
               key={category.id}
@@ -185,13 +296,15 @@ export default function HomeScreen() {
               }}
             />
           ))}
-        </View>
+        </ScrollView>
 
-        {/* Suggested Mentors Section (Replaces old Top Mentors) */}
+        {/* Section: Suggested Mentors (Students) or Colleague Network (Mentors) */}
         <View style={[styles.sectionHeader, styles.topMentorsHeader]}>
           <View style={styles.sectionTitleRow}>
-            <Text style={styles.sectionTitle}>Suggested mentors</Text>
-            {hasInterests && !isFiltering && (
+            <Text style={styles.sectionTitle}>
+              {isMentor ? 'Faculty & Colleague Network' : 'Suggested mentors'}
+            </Text>
+            {isStudent && hasInterests && !isFiltering && (
               <View style={styles.sparkleBadge}>
                 <SymbolView
                   name={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }}
@@ -207,8 +320,8 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Callout to add interests if student has none */}
-        {!hasInterests && !isFiltering && (
+        {/* Student-only Callout to personalize interests */}
+        {isStudent && !hasInterests && !isFiltering && (
           <Pressable
             accessibilityRole="button"
             onPress={() =>
@@ -233,6 +346,20 @@ export default function HomeScreen() {
               tintColor="#3B5DF6"
             />
           </Pressable>
+        )}
+
+        {/* Mentor notice banner: mentors can view peers, but bookings are for students */}
+        {isMentor && !isFiltering && (
+          <View style={styles.mentorNetworkNotice}>
+            <SymbolView
+              name={{ ios: 'info.circle.fill', android: 'info', web: 'info' }}
+              size={16}
+              tintColor="#7C3AED"
+            />
+            <Text style={styles.mentorNetworkNoticeText}>
+              Explore peer researchers and mentors across university departments. Mentorship bookings are reserved for student accounts.
+            </Text>
+          </View>
         )}
 
         {/* Mentors Horizontal Carousel */}
@@ -274,8 +401,8 @@ export default function HomeScreen() {
               <MentorCard
                 key={match.mentor.id}
                 mentor={match.mentor}
-                score={hasInterests ? match.score : undefined}
-                matchReason={match.matchReasons[0]}
+                score={isStudent && hasInterests ? match.score : undefined}
+                matchReason={isStudent ? match.matchReasons[0] : 'Faculty Colleague'}
                 onPress={() => handleSelectMentor(match.mentor.id)}
               />
             ))}
@@ -309,10 +436,36 @@ const styles = StyleSheet.create({
   greetingTextContainer: {
     gap: 4,
   },
+  eyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   eyebrow: {
     color: '#6B7280',
     fontSize: 14,
     fontWeight: '500',
+  },
+  roleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  roleBadgeStudent: {
+    backgroundColor: '#EEF2FF',
+  },
+  roleBadgeMentor: {
+    backgroundColor: '#F3EEFF',
+  },
+  roleBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  roleBadgeTextStudent: {
+    color: '#3B5DF6',
+  },
+  roleBadgeTextMentor: {
+    color: '#7C3AED',
   },
   userName: {
     color: '#111827',
@@ -340,11 +493,165 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFFFFF',
   },
-  searchSection: {
-    marginTop: 2,
+  mentorHubContainer: {
+    gap: 12,
   },
-  bannerSection: {
+  pendingAlertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+    borderRadius: 16,
+    padding: 14,
+    gap: 12,
+  },
+  pendingAlertIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pendingAlertContent: {
+    flex: 1,
+    gap: 2,
+  },
+  pendingAlertTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#92400E',
+  },
+  pendingAlertSub: {
+    fontSize: 12,
+    color: '#B45309',
+    lineHeight: 16,
+  },
+  nextSessionCardMentor: {
+    backgroundColor: '#FAF5FF',
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+  },
+  nextSessionCardStudent: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+  },
+  nextSessionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  nextSessionPill: {
+    backgroundColor: '#7C3AED',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  nextSessionPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  nextSessionPillStudent: {
+    backgroundColor: '#3B5DF6',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  nextSessionPillTextStudent: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  nextSessionDate: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B21A8',
+  },
+  nextSessionDateStudent: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1E40AF',
+  },
+  nextSessionStudentName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  nextSessionTopic: {
+    fontSize: 13,
+    color: '#4B5563',
+  },
+  nextSessionActionBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#7C3AED',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
     marginTop: 4,
+  },
+  nextSessionActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  nextSessionStudentBtn: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#3B5DF6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  nextSessionStudentBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  mentorQuickActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  mentorQuickCard: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  mentorQuickIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  mentorQuickTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  mentorQuickSub: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  categoriesContainer: {
+    marginHorizontal: -20,
+  },
+  categoriesScroll: {
+    paddingHorizontal: 20,
+    gap: 10,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -384,11 +691,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  categoriesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
   personalizeCallout: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -421,6 +723,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  mentorNetworkNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FAF5FF',
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    borderRadius: 14,
+    padding: 12,
+    gap: 10,
+  },
+  mentorNetworkNoticeText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#6B21A8',
+    lineHeight: 17,
+  },
   mentorsScroll: {
     gap: 14,
     paddingRight: 8,
@@ -444,44 +762,7 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     fontSize: 14,
   },
-  errorCard: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 16,
-    padding: 16,
-    gap: 8,
-    marginTop: 6,
-  },
-  errorCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  errorCardTitle: {
-    color: '#991B1B',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  errorCardText: {
-    color: '#7F1D1D',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  retryButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 10,
-    marginTop: 2,
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.85,
   },
 });

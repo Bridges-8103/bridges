@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -15,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { CompactTagCard } from '@/components/common/compact-tag-card';
 import { ROUTES } from '@/constants/routes';
-import { useProfileQuery } from '@/services/profile/queries';
+import { useRole } from '@/hooks/use-role';
 import { useUpdateProfileMutation } from '@/services/profile/mutations';
 import { useMentorsQuery, useSuggestedMentorsQuery } from '@/services/mentors/queries';
 import { useTaxonomyQuery } from '@/services/taxonomy/queries';
@@ -23,7 +22,7 @@ import type { MentorProfile } from '@/services/mentors/types';
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const { data: profile } = useProfileQuery();
+  const { profile, isMentor, isStudent } = useRole();
   const updateProfileMutation = useUpdateProfileMutation();
 
   const profileInterests = profile?.studentDetail?.interests;
@@ -66,30 +65,18 @@ export default function ExploreScreen() {
     { enabled: isFiltering }
   );
 
-  // 2. Default state: interest-ranked mentor suggestions from database
+  // 2. Default state: interest-ranked mentor suggestions from database (or all mentors for mentors)
   const {
     data: suggestedMatches = [],
     isLoading: isSuggestionsLoading,
-  } = useSuggestedMentorsQuery(selectedInterests, 30, { enabled: !isFiltering });
+  } = useSuggestedMentorsQuery(isStudent ? selectedInterests : [], 30, { enabled: !isFiltering });
 
   const handleBook = (mentor: MentorProfile) => {
-    Alert.alert(
-      `Book Session with ${mentor.name}`,
-      `${mentor.jobTitle || 'Faculty Researcher'} at ${
-        mentor.company || 'Adelaide University'
-      }\n\nWould you like to send a mentorship inquiry?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send Request',
-          onPress: () =>
-            Alert.alert(
-              'Request Sent! 🎉',
-              `Your request was sent to ${mentor.name}. They usually reply within 24-48 hours.`
-            ),
-        },
-      ]
-    );
+    if (isMentor) {
+      // Mentors cannot book sessions
+      return;
+    }
+    router.push(ROUTES.mentorBook(mentor.id));
   };
 
   const handleViewMentor = (mentorId: string) => {
@@ -106,11 +93,44 @@ export default function ExploreScreen() {
         keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Find Your Mentor</Text>
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.title}>
+              {isMentor ? 'Mentor & Faculty Directory' : 'Find Your Mentor'}
+            </Text>
+            <View
+              style={[
+                styles.roleBadge,
+                isMentor ? styles.roleBadgeMentor : styles.roleBadgeStudent,
+              ]}>
+              <Text
+                style={[
+                  styles.roleBadgeText,
+                  isMentor ? styles.roleBadgeTextMentor : styles.roleBadgeTextStudent,
+                ]}>
+                {isMentor ? '🌟 Colleague Network' : '🎓 Find Mentors'}
+              </Text>
+            </View>
+          </View>
           <Text style={styles.subtitle}>
-            Explore thousands of university researchers and faculty mentors matched to your goals.
+            {isMentor
+              ? 'Search university faculty, researchers, and fellow mentors across departments.'
+              : 'Explore university researchers and faculty mentors matched to your academic goals.'}
           </Text>
         </View>
+
+        {/* Mentor role notice banner */}
+        {isMentor && (
+          <View style={styles.mentorBanner}>
+            <SymbolView
+              name={{ ios: 'info.circle.fill', android: 'info', web: 'info' }}
+              size={16}
+              tintColor="#7C3AED"
+            />
+            <Text style={styles.mentorBannerText}>
+              You can search and view peer profiles. Mentorship session booking is reserved for student accounts.
+            </Text>
+          </View>
+        )}
 
         {/* Search Bar */}
         <View style={styles.searchBar}>
@@ -122,7 +142,11 @@ export default function ExploreScreen() {
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search by mentor name, role, department, or skill…"
+            placeholder={
+              isMentor
+                ? 'Search colleague by name, department, or field…'
+                : 'Search by mentor name, role, department, or skill…'
+            }
             placeholderTextColor="#9CA3AF"
             style={styles.searchInput}
             autoCapitalize="none"
@@ -198,8 +222,8 @@ export default function ExploreScreen() {
           </ScrollView>
         </View>
 
-        {/* Categorized Interests Selector */}
-        {!isFiltering && (
+        {/* Categorized Interests Selector (Students only) */}
+        {isStudent && !isFiltering && (
           <CompactTagCard
             title="Your Interests"
             subtitle="Match with mentors specializing in these topics"
@@ -215,12 +239,16 @@ export default function ExploreScreen() {
         <View style={styles.section}>
           <View style={styles.resultsHeader}>
             <Text style={styles.sectionLabel}>
-              {isFiltering ? 'Search Results' : 'Recommended Mentors'}
+              {isFiltering
+                ? 'Search Results'
+                : isMentor
+                ? 'Faculty & Mentors'
+                : 'Recommended Mentors'}
             </Text>
             <Text style={styles.matchCountBadge}>
               {isFiltering
                 ? `${filteredResult?.total ?? 0} Mentors`
-                : `${suggestedMatches.length} Matches`}
+                : `${suggestedMatches.length} Mentors`}
             </Text>
           </View>
 
@@ -237,6 +265,7 @@ export default function ExploreScreen() {
                   <MentorListItem
                     key={mentor.id}
                     mentor={mentor}
+                    isMentorUser={isMentor}
                     onPress={() => handleViewMentor(mentor.id)}
                     onBook={() => handleBook(mentor)}
                   />
@@ -258,8 +287,9 @@ export default function ExploreScreen() {
                   <MentorListItem
                     key={match.mentor.id}
                     mentor={match.mentor}
-                    score={match.score}
-                    reasons={match.matchReasons}
+                    score={isStudent ? match.score : undefined}
+                    reasons={isStudent ? match.matchReasons : undefined}
+                    isMentorUser={isMentor}
                     onPress={() => handleViewMentor(match.mentor.id)}
                     onBook={() => handleBook(match.mentor)}
                   />
@@ -267,9 +297,11 @@ export default function ExploreScreen() {
               </View>
             ) : (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyTitle}>No recommendations available</Text>
+                <Text style={styles.emptyTitle}>No mentors found</Text>
                 <Text style={styles.emptySubtitle}>
-                  Add interests above to unlock personalized recommendations.
+                  {isStudent
+                    ? 'Add interests above to unlock personalized recommendations.'
+                    : 'Check back later as new faculty join the platform.'}
                 </Text>
               </View>
             )
@@ -284,12 +316,14 @@ function MentorListItem({
   mentor,
   score,
   reasons,
+  isMentorUser,
   onPress,
   onBook,
 }: {
   mentor: MentorProfile;
   score?: number;
   reasons?: string[];
+  isMentorUser?: boolean;
   onPress: () => void;
   onBook: () => void;
 }) {
@@ -367,16 +401,19 @@ function MentorListItem({
         <Pressable
           accessibilityRole="button"
           onPress={onPress}
-          style={styles.profileBtn}>
+          style={[styles.profileBtn, isMentorUser && styles.profileBtnFull]}>
           <Text style={styles.profileBtnText}>View Profile</Text>
         </Pressable>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={onBook}
-          style={styles.connectButton}>
-          <Text style={styles.connectButtonText}>Connect</Text>
-        </Pressable>
+        {/* Booking action only visible to Students */}
+        {!isMentorUser && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={onBook}
+            style={styles.connectButton}>
+            <Text style={styles.connectButtonText}>Book Session</Text>
+          </Pressable>
+        )}
       </View>
     </Pressable>
   );
@@ -396,16 +433,60 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 6,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   title: {
     color: '#111827',
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     letterSpacing: -0.4,
+    flex: 1,
+  },
+  roleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  roleBadgeStudent: {
+    backgroundColor: '#EEF2FF',
+  },
+  roleBadgeMentor: {
+    backgroundColor: '#F3EEFF',
+  },
+  roleBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  roleBadgeTextStudent: {
+    color: '#3B5DF6',
+  },
+  roleBadgeTextMentor: {
+    color: '#7C3AED',
   },
   subtitle: {
     color: '#6B7280',
     fontSize: 14,
     lineHeight: 20,
+  },
+  mentorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAF5FF',
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    borderRadius: 14,
+    padding: 12,
+    gap: 10,
+  },
+  mentorBannerText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#6B21A8',
+    lineHeight: 17,
   },
   searchBar: {
     flexDirection: 'row',
@@ -598,6 +679,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  profileBtnFull: {
+    flex: 1,
   },
   profileBtnText: {
     color: '#374151',

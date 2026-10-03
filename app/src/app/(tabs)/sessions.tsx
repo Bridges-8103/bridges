@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { ROUTES } from '@/constants/routes';
-import { useProfileQuery } from '@/services/profile/queries';
+import { useRole } from '@/hooks/use-role';
 import {
   useBookingsQuery,
   useUpdateBookingStatusMutation,
@@ -53,8 +53,7 @@ function formatBookingTime(startTimeIso: string, endTimeIso: string): { dateStr:
 export default function SessionsScreen() {
   const router = useRouter();
 
-  const { data: profile } = useProfileQuery();
-  const isMentor = profile?.role === 'MENTOR';
+  const { isMentor } = useRole();
 
   const {
     data: bookings = [],
@@ -223,7 +222,24 @@ export default function SessionsScreen() {
         }>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>My Sessions</Text>
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.title}>
+              {isMentor ? 'Student Mentorship Sessions' : 'My Booked Sessions'}
+            </Text>
+            <View
+              style={[
+                styles.roleBadge,
+                isMentor ? styles.roleBadgeMentor : styles.roleBadgeStudent,
+              ]}>
+              <Text
+                style={[
+                  styles.roleBadgeText,
+                  isMentor ? styles.roleBadgeTextMentor : styles.roleBadgeTextStudent,
+                ]}>
+                {isMentor ? '🌟 Mentor Mode' : '🎓 Student Mode'}
+              </Text>
+            </View>
+          </View>
           <Text style={styles.subtitle}>
             {isMentor
               ? 'Review and manage your incoming student mentorship bookings.'
@@ -358,6 +374,12 @@ export default function SessionsScreen() {
                   ? 'When students book your available slots, their session requests will appear here for you to accept or decline.'
                   : 'Configure more available slots to allow students to book mentorship sessions.'}
               </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push(ROUTES.MENTOR_AVAILABILITY)}
+                style={styles.browseMentorsBtn}>
+                <Text style={styles.browseMentorsBtnText}>Configure Available Slots</Text>
+              </Pressable>
             </View>
           ) : (
             <View style={styles.sessionList}>
@@ -473,7 +495,7 @@ export default function SessionsScreen() {
               </Text>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => router.push(ROUTES.TABS)}
+                onPress={() => router.push('/explore')}
                 style={styles.browseMentorsBtn}>
                 <Text style={styles.browseMentorsBtnText}>Explore Mentors</Text>
               </Pressable>
@@ -582,11 +604,39 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 4,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  roleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  roleBadgeStudent: {
+    backgroundColor: '#EEF2FF',
+  },
+  roleBadgeMentor: {
+    backgroundColor: '#F3EEFF',
+  },
+  roleBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  roleBadgeTextStudent: {
+    color: '#3B5DF6',
+  },
+  roleBadgeTextMentor: {
+    color: '#7C3AED',
+  },
   title: {
     color: '#111827',
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '800',
     letterSpacing: -0.4,
+    flex: 1,
   },
   subtitle: {
     color: '#6B7280',
