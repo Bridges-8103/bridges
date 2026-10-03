@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { SESSION_CONFIG } from '@/constants/sessions';
+import { useRole } from '@/hooks/use-role';
 import {
   useMentorConfiguredSlotsQuery,
   useSetMentorAvailabilityMutation,
@@ -52,12 +53,13 @@ function generateDayIntervals(startHour = 9, endHour = 18): string[] {
 
 export default function MentorAvailabilityScreen() {
   const router = useRouter();
+  const { isMentor } = useRole();
 
   const daysList = useMemo(() => getNextDays(14), []);
   const [selectedDate, setSelectedDate] = useState<Date>(daysList[0]);
   const activeDateKey = toDateKey(selectedDate);
 
-  const { data: serverSlots = [], isLoading, refetch } = useMentorConfiguredSlotsQuery();
+  const { data: serverSlots = [], isLoading } = useMentorConfiguredSlotsQuery();
   const saveMutation = useSetMentorAvailabilityMutation();
 
   // Local draft of enabled slot keys: Set<"YYYY-MM-DDTHH:mm:00.000Z">
@@ -197,6 +199,57 @@ export default function MentorAvailabilityScreen() {
   };
 
   const activeCountForDay = timeIntervals.filter((t) => isSlotEnabled(t)).length;
+
+  if (!isMentor) {
+    return (
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <SymbolView
+              name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }}
+              size={20}
+              tintColor="#111827"
+            />
+          </Pressable>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.title}>Mentor Availability</Text>
+            <Text style={styles.subtitle}>Reserved for mentors</Text>
+          </View>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.centerBox}>
+          <SymbolView
+            name={{
+              ios: 'calendar.badge.exclamationmark',
+              android: 'event_busy',
+              web: 'event_busy',
+            }}
+            size={48}
+            tintColor="#3B5DF6"
+          />
+          <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', marginTop: 12 }}>
+            Mentor Only Feature
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: '#6B7280',
+              textAlign: 'center',
+              maxWidth: 280,
+              marginTop: 6,
+              lineHeight: 20,
+            }}>
+            Availability configuration is reserved for mentors to set up booking slots for students.
+          </Text>
+          <Pressable
+            onPress={() => router.back()}
+            style={[styles.saveButton, { marginTop: 16, paddingHorizontal: 24 }]}>
+            <Text style={styles.saveButtonText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>

@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { ROUTES } from '@/constants/routes';
+import { useRole } from '@/hooks/use-role';
 import { useMentorDetailQuery } from '@/services/mentors/queries';
 import {
   useCreateBookingsMutation,
@@ -53,6 +54,7 @@ function formatDateTimeRange(startTimeIso: string, endTimeIso: string): { dateSt
 
 export default function ConfirmBookingScreen() {
   const router = useRouter();
+  const { isMentor } = useRole();
   const { id, slotIds: rawSlotIds } = useLocalSearchParams<{ id: string; slotIds: string }>();
 
   const slotIds = useMemo(() => {
@@ -123,6 +125,14 @@ export default function ConfirmBookingScreen() {
   const handleSubmit = async () => {
     if (!id || selectedSlots.length === 0) return;
 
+    if (isMentor) {
+      Alert.alert(
+        'Booking Unavailable',
+        'As a mentor, you can receive session requests from students, but cannot book sessions.'
+      );
+      return;
+    }
+
     // Validation: check each slot has a topic
     for (let i = 0; i < selectedSlots.length; i++) {
       const slot = selectedSlots[i];
@@ -169,6 +179,58 @@ export default function ConfirmBookingScreen() {
       );
     }
   };
+
+  if (isMentor) {
+    return (
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <View style={styles.header}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.back()}
+            style={styles.backButton}>
+            <SymbolView
+              name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }}
+              size={20}
+              tintColor="#111827"
+            />
+          </Pressable>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.title}>Booking Unavailable</Text>
+            <Text style={styles.subtitle}>Reserved for students</Text>
+          </View>
+          <View style={{ width: 40 }} />
+        </View>
+
+        <View style={styles.centerBox}>
+          <SymbolView
+            name={{ ios: 'lock.circle.fill', android: 'lock', web: 'lock' }}
+            size={48}
+            tintColor="#7C3AED"
+          />
+          <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', marginTop: 12 }}>
+            Booking Reserved for Students
+          </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              color: '#6B7280',
+              textAlign: 'center',
+              lineHeight: 20,
+              maxWidth: 280,
+              marginTop: 6,
+            }}>
+            Mentors cannot book mentorship sessions. Only students can make session reservations.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.back()}
+            style={[styles.submitButton, { marginTop: 16, paddingHorizontal: 24 }]}>
+            <Text style={styles.submitButtonText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (isMentorLoading || isSlotsLoading) {
     return (

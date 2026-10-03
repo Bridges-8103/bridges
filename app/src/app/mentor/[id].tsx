@@ -16,12 +16,15 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { useRole } from '@/hooks/use-role';
 import { useMentorDetailQuery } from '@/services/mentors/queries';
 import { useProfileQuery } from '@/services/profile/queries';
+import { ROUTES } from '@/constants/routes';
 
 export default function MentorDetailScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { isMentor } = useRole();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: mentor, isLoading, isError, refetch } = useMentorDetailQuery(id ?? '');
@@ -45,6 +48,13 @@ export default function MentorDetailScreen() {
 
   const handleBookSession = () => {
     if (!mentor) return;
+    if (isMentor) {
+      Alert.alert(
+        'Booking Unavailable',
+        'As a mentor, you can view peer profiles and network with colleagues, but session bookings are reserved for students.'
+      );
+      return;
+    }
     router.push(ROUTES.mentorBook(mentor.id));
   };
 
@@ -342,26 +352,73 @@ export default function MentorDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Booking Action Bar */}
+      {/* Sticky Bottom Action Bar */}
       <View style={[styles.bottomBar, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={handleBookSession}
-          style={({ pressed }) => [
-            styles.bookButton,
-            pressed && styles.pressed,
-          ]}>
-          <SymbolView
-            name={{
-              ios: 'calendar.badge.plus',
-              android: 'event',
-              web: 'event',
-            }}
-            size={18}
-            tintColor="#FFFFFF"
-          />
-          <Text style={styles.bookButtonText}>Book Mentorship Session</Text>
-        </Pressable>
+        {isMentor ? (
+          <View style={styles.mentorBottomContainer}>
+            <View style={styles.mentorNoticeRow}>
+              <SymbolView
+                name={{ ios: 'info.circle.fill', android: 'info', web: 'info' }}
+                size={14}
+                tintColor="#7C3AED"
+              />
+              <Text style={styles.mentorNoticeText}>
+                Mentorship booking is reserved for student accounts.
+              </Text>
+            </View>
+            <View style={styles.mentorActionButtonsRow}>
+              {(mentor.contactEmail || mentor.email) && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={handleOpenEmail}
+                  style={({ pressed }) => [
+                    styles.mentorEmailButton,
+                    pressed && styles.pressed,
+                  ]}>
+                  <SymbolView
+                    name={{ ios: 'envelope.fill', android: 'mail', web: 'mail' }}
+                    size={16}
+                    tintColor="#3B5DF6"
+                  />
+                  <Text style={styles.mentorEmailButtonText}>Email Colleague</Text>
+                </Pressable>
+              )}
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleShare}
+                style={({ pressed }) => [
+                  styles.mentorShareButton,
+                  pressed && styles.pressed,
+                ]}>
+                <SymbolView
+                  name={{ ios: 'square.and.arrow.up', android: 'share', web: 'share' }}
+                  size={16}
+                  tintColor="#4B5563"
+                />
+                <Text style={styles.mentorShareButtonText}>Share Profile</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleBookSession}
+            style={({ pressed }) => [
+              styles.bookButton,
+              pressed && styles.pressed,
+            ]}>
+            <SymbolView
+              name={{
+                ios: 'calendar.badge.plus',
+                android: 'event',
+                web: 'event',
+              }}
+              size={18}
+              tintColor="#FFFFFF"
+            />
+            <Text style={styles.bookButtonText}>Book Mentorship Session</Text>
+          </Pressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -681,5 +738,59 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+  mentorBottomContainer: {
+    gap: 8,
+  },
+  mentorNoticeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FAF5FF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  mentorNoticeText: {
+    fontSize: 12,
+    color: '#7C3AED',
+    fontWeight: '600',
+  },
+  mentorActionButtonsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  mentorEmailButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  mentorEmailButtonText: {
+    color: '#3B5DF6',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  mentorShareButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  mentorShareButtonText: {
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

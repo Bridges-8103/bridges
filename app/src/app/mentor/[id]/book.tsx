@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { ROUTES } from '@/constants/routes';
+import { useRole } from '@/hooks/use-role';
 import { useMentorDetailQuery } from '@/services/mentors/queries';
 import { useMentorAvailableSlotsQuery } from '@/services/sessions/queries';
 import type { SlotDto } from '@/services/sessions/types';
@@ -47,6 +47,7 @@ function formatSlotTime(isoString: string): string {
 export default function BookMentorSessionsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { isMentor } = useRole();
 
   const { data: mentor, isLoading: isMentorLoading } = useMentorDetailQuery(id ?? '');
   const { data: availableSlots = [], isLoading: isSlotsLoading } =
@@ -83,12 +84,58 @@ export default function BookMentorSessionsScreen() {
   const handleProceedToConfirmation = () => {
     if (selectedSlotIds.length === 0 || !id) return;
     router.push({
-      pathname: ROUTES.mentorConfirmBooking(id),
-      params: { slotIds: selectedSlotIds.join(',') },
+      pathname: '/mentor/[id]/confirm-booking',
+      params: { id, slotIds: selectedSlotIds.join(',') },
     });
   };
 
   const selectedCount = selectedSlotIds.length;
+
+  if (isMentor) {
+    return (
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <View style={styles.header}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.back()}
+            style={styles.backButton}>
+            <SymbolView
+              name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }}
+              size={20}
+              tintColor="#111827"
+            />
+          </Pressable>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.title}>Booking Unavailable</Text>
+            <Text numberOfLines={1} style={styles.subtitle}>
+              Reserved for students
+            </Text>
+          </View>
+          <View style={{ width: 40 }} />
+        </View>
+
+        <View style={styles.mentorBlockedBox}>
+          <View style={styles.mentorBlockedIconWrap}>
+            <SymbolView
+              name={{ ios: 'lock.circle.fill', android: 'lock', web: 'lock' }}
+              size={48}
+              tintColor="#7C3AED"
+            />
+          </View>
+          <Text style={styles.mentorBlockedTitle}>Booking Reserved for Students</Text>
+          <Text style={styles.mentorBlockedText}>
+            You are signed in as a Mentor. Mentors can view peer profiles and receive mentorship requests from students, but cannot book sessions.
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.back()}
+            style={styles.goBackPrimaryBtn}>
+            <Text style={styles.goBackPrimaryBtnText}>Go Back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -587,5 +634,46 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  mentorBlockedBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    gap: 14,
+  },
+  mentorBlockedIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FAF5FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  mentorBlockedTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  mentorBlockedText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: 300,
+  },
+  goBackPrimaryBtn: {
+    marginTop: 12,
+    backgroundColor: '#7C3AED',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  goBackPrimaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
