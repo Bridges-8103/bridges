@@ -40,6 +40,11 @@ model User {
 
   reportsReceived Report[] @relation("ReportedUser")
 
+  // Mentorship session slots and bookings
+  mentorSlots     SessionSlot[]    @relation("MentorSlots")
+  mentorBookings  SessionBooking[] @relation("MentorBookings")
+  studentBookings SessionBooking[] @relation("StudentBookings")
+
   @@index([role])
   @@index([verificationStatus])
 }
@@ -160,4 +165,58 @@ model TaxonomyTag {
   @@index([type])
   @@index([mentorCount])
   @@index([isCurated])
+}
+
+// ==========================================
+// MENTORSHIP SESSIONS & AVAILABILITY
+// ==========================================
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+model SessionSlot {
+  id          Int      @id @default(autoincrement())
+  mentorId    Int
+  startTime   DateTime
+  endTime     DateTime
+  isAvailable Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mentor      User            @relation("MentorSlots", fields: [mentorId], references: [id], onDelete: Cascade)
+  booking     SessionBooking?
+
+  @@unique([mentorId, startTime])
+  @@index([mentorId, startTime])
+  @@index([isAvailable])
+}
+
+model SessionBooking {
+  id            Int           @id @default(autoincrement())
+  slotId        Int           @unique
+  mentorId      Int
+  studentId     Int
+  batchId       String?
+  topic         String
+  notes         String?
+  status        BookingStatus @default(PENDING)
+  meetingLink   String?
+  declineReason String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  slot          SessionSlot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  mentor        User          @relation("MentorBookings", fields: [mentorId], references: [id], onDelete: Cascade)
+  student       User          @relation("StudentBookings", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([mentorId, status])
+  @@index([studentId, status])
+  @@index([batchId])
 }
