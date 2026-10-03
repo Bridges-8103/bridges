@@ -51,6 +51,7 @@ function AuthGate() {
         <Stack.Screen name={ROUTE_SEGMENTS.SIGN_IN} />
         <Stack.Screen name={ROUTE_SEGMENTS.SIGN_UP} />
         <Stack.Screen name={ROUTE_SEGMENTS.MENTOR_PROFILE} />
+        <Stack.Screen name={ROUTE_SEGMENTS.MENTOR_AVAILABILITY} />
         <Stack.Screen
           name={ROUTE_SEGMENTS.SELECT_TAGS}
           options={{ presentation: 'modal', headerShown: false }}

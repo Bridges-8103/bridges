@@ -179,6 +179,29 @@ export default function ProfileScreen() {
           </Pressable>
 
           <Pressable
+            onPress={() => router.push(ROUTES.MENTOR_AVAILABILITY)}
+            style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconContainer, { backgroundColor: '#F0FDF4' }]}>
+                <SymbolView
+                  name={{ ios: 'calendar.badge.clock', android: 'event_available', web: 'event_available' }}
+                  size={18}
+                  tintColor="#10B981"
+                />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>Manage Availability</Text>
+                <Text style={styles.menuItemSub}>Configure 30-min booking slots</Text>
+              </View>
+            </View>
+            <SymbolView
+              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+              size={14}
+              tintColor="#9CA3AF"
+            />
+          </Pressable>
+
+          <Pressable
             onPress={() => router.push(ROUTES.WELCOME)}
             style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
             <View style={styles.menuLeft}>
