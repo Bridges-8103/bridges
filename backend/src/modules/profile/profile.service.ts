@@ -6,6 +6,7 @@ import type {
 import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import { type AuthUser } from "@/lib/auth";
+import { resolveClerkUser } from "@/lib/clerkUser";
 
 type PrismaUserWithDetails = {
   id: number;
@@ -101,12 +102,32 @@ export class ProfileService {
    * Retrieve a user profile by authenticated user info (email or id)
    */
   static async getProfileByUserIdOrEmail(userId: string, email?: string): Promise<Profile | null> {
-    if (email) {
+    console.log(
+      `[ProfileService.getProfileByUserIdOrEmail] Lookup profile: userId=${userId}, email=${email || 'none'}`
+    );
+
+    let resolvedEmail = email;
+
+    // If email is missing or placeholder @clerk.user, attempt Clerk API resolution for Clerk user IDs
+    if ((!resolvedEmail || resolvedEmail.endsWith("@clerk.user")) && userId.startsWith("user_")) {
+      const clerkResolved = await resolveClerkUser(userId);
+      if (clerkResolved?.email) {
+        resolvedEmail = clerkResolved.email;
+        console.log(
+          `[ProfileService.getProfileByUserIdOrEmail] Resolved real email from Clerk: ${resolvedEmail}`
+        );
+      }
+    }
+
+    if (resolvedEmail && !resolvedEmail.endsWith("@clerk.user")) {
       const user = await prisma.user.findUnique({
-        where: { email },
+        where: { email: resolvedEmail },
         include: { studentDetail: true, mentorDetail: true },
       });
       if (user) {
+        console.log(
+          `[ProfileService.getProfileByUserIdOrEmail] Matched user by email: id=${user.id}, role=${user.role}, name=${user.name}`
+        );
         return mapUserToProfile(user as PrismaUserWithDetails);
       }
     }
@@ -118,10 +139,16 @@ export class ProfileService {
         include: { studentDetail: true, mentorDetail: true },
       });
       if (user) {
+        console.log(
+          `[ProfileService.getProfileByUserIdOrEmail] Matched user by numId: id=${user.id}, role=${user.role}, name=${user.name}`
+        );
         return mapUserToProfile(user as PrismaUserWithDetails);
       }
     }
 
+    console.log(
+      `[ProfileService.getProfileByUserIdOrEmail] No profile found for userId=${userId}, email=${resolvedEmail || email || 'none'}`
+    );
     return null;
   }
 
@@ -136,10 +163,22 @@ export class ProfileService {
    * Create or update a user profile
    */
   static async createProfile(data: CreateProfileInput, actor?: AuthUser): Promise<Profile> {
-    const email = data.email || actor?.email;
-    if (!email) {
-      throw new Error("User email is required to associate profile.");
+    let email = data.email || actor?.email;
+
+    if ((!email || email.endsWith("@clerk.user")) && actor?.id?.startsWith("user_")) {
+      const clerkResolved = await resolveClerkUser(actor.id);
+      if (clerkResolved?.email) {
+        email = clerkResolved.email;
+      }
     }
+
+    if (!email || email.endsWith("@clerk.user")) {
+      throw new Error("Valid user email is required to associate profile.");
+    }
+
+    console.log(
+      `[ProfileService.createProfile] Creating profile for email=${email}, role=${data.role || 'STUDENT'}, displayName=${data.displayName}`
+    );
 
     const role = data.role === "MENTOR" ? "MENTOR" : "STUDENT";
 
@@ -229,7 +268,7 @@ export class ProfileService {
     actor?: AuthUser
   ): Promise<Profile> {
     let existing = await this.getProfileById(id);
-    if (!existing && actor?.email) {
+    if (!existing && actor) {
       existing = await this.getProfileByUserIdOrEmail(actor.id, actor.email);
     }
 

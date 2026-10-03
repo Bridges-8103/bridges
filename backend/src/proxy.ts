@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher, verifyToken } from "@clerk/nextjs/
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyJwt } from "@/lib/jwt";
 import { sendResponse } from "@/lib/sendResponse";
+import { resolveClerkUser } from "@/lib/clerkUser";
 
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
 
@@ -107,8 +108,25 @@ async function handleApiProxy(req: NextRequest): Promise<NextResponse> {
         ? claims.email
         : typeof claims.primary_email === "string"
         ? claims.primary_email
-        : `${userId}@clerk.user`;
+        : "";
     role = typeof claims.role === "string" ? claims.role : undefined;
+
+    // If email is not present in token claims (default Clerk behavior), resolve via Clerk User API
+    if (!email && process.env.CLERK_SECRET_KEY) {
+      const resolved = await resolveClerkUser(userId, process.env.CLERK_SECRET_KEY);
+      if (resolved) {
+        email = resolved.email;
+        if (!role && resolved.role) {
+          role = resolved.role;
+        }
+      }
+    }
+
+    if (!email) {
+      email = `${userId}@clerk.user`;
+    }
+
+    console.log(`[proxy] Clerk auth resolved: sub=${userId}, email=${email}, role=${role || 'none'}`);
   } catch {
     // 2. Fallback: Verify as backend HS256 JWT
     try {

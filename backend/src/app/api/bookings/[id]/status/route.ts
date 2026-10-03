@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { sendResponse } from "@/lib/sendResponse";
-import { withAuth } from "@/lib/auth";
+import { withAuth, type AuthUser } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/validate";
 import { SessionsService } from "@/modules/sessions/sessions.service";
 import { updateBookingStatusSchema } from "@/modules/sessions/sessions.schema";
@@ -10,7 +10,7 @@ import { updateBookingStatusSchema } from "@/modules/sessions/sessions.schema";
  */
 export const PATCH = withAuth(async (
   req: NextRequest,
-  { user, params }: { user: any; params: Promise<{ id: string }> }
+  { user, params }: { user: AuthUser; params: Promise<{ id: string }> }
 ) => {
   const { id } = await params;
   const bookingId = parseInt(id, 10);

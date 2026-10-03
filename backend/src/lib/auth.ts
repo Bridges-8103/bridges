@@ -3,6 +3,7 @@ import { verifyToken } from "@clerk/nextjs/server";
 import { UnauthorizedError, ForbiddenError } from "./errors";
 import { verifyJwt } from "./jwt";
 import { handleApiError } from "./apiHandler";
+import { resolveClerkUser } from "./clerkUser";
 
 export interface AuthUser {
   id: string;
@@ -38,10 +39,25 @@ export function extractAuthToken(req: NextRequest): string | null {
 export async function getAuthUser(req: NextRequest): Promise<AuthUser | null> {
   // 1. First check if Edge Proxy already validated the token and set internal headers
   const headerUserId = req.headers.get("x-user-id");
-  const headerEmail = req.headers.get("x-user-email");
-  const headerRole = req.headers.get("x-user-role");
+  let headerEmail = req.headers.get("x-user-email");
+  let headerRole = req.headers.get("x-user-role");
 
   if (headerUserId && headerEmail) {
+    // If the proxy passed a placeholder @clerk.user, attempt direct resolution
+    if (headerEmail.endsWith("@clerk.user") && headerUserId.startsWith("user_")) {
+      const resolved = await resolveClerkUser(headerUserId);
+      if (resolved?.email) {
+        headerEmail = resolved.email;
+        if (!headerRole && resolved.role) {
+          headerRole = resolved.role;
+        }
+      }
+    }
+
+    console.log(
+      `[auth.getAuthUser] Headers resolved: id=${headerUserId}, email=${headerEmail}, role=${headerRole || 'none'}`
+    );
+
     return {
       id: headerUserId,
       email: headerEmail,
@@ -61,20 +77,47 @@ export async function getAuthUser(req: NextRequest): Promise<AuthUser | null> {
       secretKey: process.env.CLERK_SECRET_KEY,
     });
     const claims = clerkPayload as Record<string, unknown>;
+    const userId = clerkPayload.sub;
+
+    let email =
+      typeof claims.email === "string"
+        ? claims.email
+        : typeof claims.primary_email === "string"
+        ? claims.primary_email
+        : "";
+    let role = typeof claims.role === "string" ? claims.role : undefined;
+
+    // Resolve via Clerk User API when email is missing from JWT claims
+    if (!email && process.env.CLERK_SECRET_KEY) {
+      const resolved = await resolveClerkUser(userId, process.env.CLERK_SECRET_KEY);
+      if (resolved) {
+        email = resolved.email;
+        if (!role && resolved.role) {
+          role = resolved.role;
+        }
+      }
+    }
+
+    if (!email) {
+      email = `${userId}@clerk.user`;
+    }
+
+    console.log(
+      `[auth.getAuthUser] Clerk token verified: sub=${userId}, email=${email}, role=${role || 'none'}`
+    );
+
     return {
-      id: clerkPayload.sub,
-      email:
-        typeof claims.email === "string"
-          ? claims.email
-          : typeof claims.primary_email === "string"
-          ? claims.primary_email
-          : `${clerkPayload.sub}@clerk.user`,
-      role: typeof claims.role === "string" ? claims.role : undefined,
+      id: userId,
+      email,
+      role,
     };
   } catch {
     // 2b. Fallback: verify backend HS256 JWT
     try {
       const payload = await verifyJwt(token);
+      console.log(
+        `[auth.getAuthUser] Local JWT verified: sub=${payload.sub}, email=${payload.email}, role=${payload.role || 'none'}`
+      );
       return {
         id: payload.sub,
         email: payload.email,
