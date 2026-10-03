@@ -311,16 +311,16 @@ export class SessionsService {
         }
       }
 
+      // Batch delete any previously declined or cancelled bookings for these slots in one shot
+      await tx.sessionBooking.deleteMany({
+        where: {
+          slotId: { in: slotIds },
+        },
+      });
+
       const results = [];
       for (const bookingReq of input.bookings) {
         const slot = slots.find((s) => s.id === bookingReq.slotId)!;
-
-        // If a previously declined or cancelled booking exists for this slot, delete or replace it
-        if (slot.booking) {
-          await tx.sessionBooking.delete({
-            where: { id: slot.booking.id },
-          });
-        }
 
         // Create new booking
         const newBooking = await tx.sessionBooking.create({
@@ -350,6 +350,9 @@ export class SessionsService {
       }
 
       return results;
+    }, {
+      maxWait: 20000,
+      timeout: 60000, // 60s timeout (1 minute)
     });
 
     return createdBookings.map((b) => this.mapBookingToDto(b));
@@ -443,6 +446,9 @@ export class SessionsService {
           student: { include: { studentDetail: true } },
         },
       });
+    }, {
+      maxWait: 20000,
+      timeout: 60000, // 60s timeout (1 minute)
     });
 
     return this.mapBookingToDto(updated);
