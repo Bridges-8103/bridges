@@ -100,17 +100,24 @@ function AdaptiveProfileForm({
 }) {
   const router = useRouter();
   const theme = useTheme();
-  const { user } = useAuth();
+  const { user, updateRole } = useAuth();
   const createProfileMutation = useCreateProfileMutation();
   const updateProfileMutation = useUpdateProfileMutation();
 
   const isNew = params.isNew === 'true' || !profile;
 
-  // Single locked role: user selects when registering and cannot change it
-  const role: 'STUDENT' | 'MENTOR' =
-    (params.role?.toUpperCase() === 'MENTOR' || profile?.role === 'MENTOR')
+  const initialRole: 'STUDENT' | 'MENTOR' =
+    params.role?.toUpperCase() === 'MENTOR'
       ? 'MENTOR'
-      : 'STUDENT';
+      : params.role?.toUpperCase() === 'STUDENT'
+        ? 'STUDENT'
+        : profile?.role === 'MENTOR'
+          ? 'MENTOR'
+          : user?.role === 'MENTOR'
+            ? 'MENTOR'
+            : 'STUDENT';
+
+  const [role, setRole] = useState<'STUDENT' | 'MENTOR'>(initialRole);
 
   // Common Fields
   const [fullName, setFullName] = useState(
@@ -230,6 +237,9 @@ function AdaptiveProfileForm({
         Alert.alert('Profile Updated', 'Your profile details have been successfully saved.', [
           { text: 'OK', onPress: () => router.replace('/(tabs)/profile') },
         ]);
+        if (updateRole) {
+          updateRole(role).catch(() => {});
+        }
       } else {
         // Create new profile (avatar is managed directly through Clerk)
         await createProfileMutation.mutateAsync({
@@ -253,6 +263,10 @@ function AdaptiveProfileForm({
           expertise: role === 'MENTOR' ? selectedExpertise : undefined,
           linkedinUrl: role === 'MENTOR' ? socialLinks.linkedin.trim() : undefined,
         });
+
+        if (updateRole) {
+          updateRole(role).catch(() => {});
+        }
 
         Alert.alert('Welcome to Bridges!', 'Your profile has been created successfully.', [
           { text: 'Get Started', onPress: () => router.replace('/(tabs)') },
@@ -331,6 +345,69 @@ function AdaptiveProfileForm({
         </View>
 
         <ProfileAvatar uri={user?.avatarUri} />
+
+        {/* Role Selector */}
+        <SectionCard title="Your Role">
+          <View style={styles.roleSelectorRow}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setRole('STUDENT')}
+              style={[
+                styles.roleOptionButton,
+                role === 'STUDENT' && styles.roleOptionActiveStudent,
+              ]}>
+              <Text style={styles.roleOptionEmoji}>🎓</Text>
+              <View style={styles.roleOptionTextGroup}>
+                <Text
+                  style={[
+                    styles.roleOptionTitle,
+                    role === 'STUDENT' && styles.roleOptionTitleActiveStudent,
+                  ]}>
+                  Student
+                </Text>
+                <Text style={styles.roleOptionSub}>Looking for career guidance & mentors</Text>
+              </View>
+              {role === 'STUDENT' && (
+                <View style={[styles.roleOptionCheck, { backgroundColor: '#3B5DF6' }]}>
+                  <SymbolView
+                    name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                    size={10}
+                    tintColor="#FFFFFF"
+                  />
+                </View>
+              )}
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setRole('MENTOR')}
+              style={[
+                styles.roleOptionButton,
+                role === 'MENTOR' && styles.roleOptionActiveMentor,
+              ]}>
+              <Text style={styles.roleOptionEmoji}>🌟</Text>
+              <View style={styles.roleOptionTextGroup}>
+                <Text
+                  style={[
+                    styles.roleOptionTitle,
+                    role === 'MENTOR' && styles.roleOptionTitleActiveMentor,
+                  ]}>
+                  Mentor
+                </Text>
+                <Text style={styles.roleOptionSub}>Sharing experience & guiding students</Text>
+              </View>
+              {role === 'MENTOR' && (
+                <View style={[styles.roleOptionCheck, { backgroundColor: '#7C3AED' }]}>
+                  <SymbolView
+                    name={{ ios: 'checkmark', android: 'check', web: 'check' }}
+                    size={10}
+                    tintColor="#FFFFFF"
+                  />
+                </View>
+              )}
+            </Pressable>
+          </View>
+        </SectionCard>
 
         {/* Basic Info */}
         <SectionCard title="Basic Info">
@@ -577,6 +654,56 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
+  },
+  roleSelectorRow: {
+    gap: 10,
+  },
+  roleOptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FAFBFF',
+    gap: 12,
+  },
+  roleOptionActiveStudent: {
+    borderColor: '#3B5DF6',
+    backgroundColor: '#EEF2FF',
+  },
+  roleOptionActiveMentor: {
+    borderColor: '#7C3AED',
+    backgroundColor: '#F3EEFF',
+  },
+  roleOptionEmoji: {
+    fontSize: 22,
+  },
+  roleOptionTextGroup: {
+    flex: 1,
+    gap: 2,
+  },
+  roleOptionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  roleOptionTitleActiveStudent: {
+    color: '#3B5DF6',
+  },
+  roleOptionTitleActiveMentor: {
+    color: '#7C3AED',
+  },
+  roleOptionSub: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  roleOptionCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pressed: {
     opacity: 0.8,

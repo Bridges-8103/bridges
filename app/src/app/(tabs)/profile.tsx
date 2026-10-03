@@ -13,12 +13,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/hooks/use-auth';
+import { useRole } from '@/hooks/use-role';
 import { ROUTES } from '@/constants/routes';
 import { useProfileQuery } from '@/services/profile/queries';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { isMentor } = useRole();
   const { data: profile, isPending, isError, error, refetch, isRefetching } = useProfileQuery();
 
   // Clerk identity is the trustworthy fallback while the profile loads or
@@ -140,7 +142,7 @@ export default function ProfileScreen() {
         {!isPending && !isError && !hasProfile ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push(ROUTES.MENTOR_PROFILE)}
+            onPress={() => router.push(ROUTES.CHOOSE_ROLE)}
             style={({ pressed }) => [styles.ctaButton, pressed && styles.pressed]}>
             <Text style={styles.ctaText}>Complete your profile</Text>
           </Pressable>
@@ -154,7 +156,7 @@ export default function ProfileScreen() {
             onPress={() =>
               router.push({
                 pathname: ROUTES.MENTOR_PROFILE,
-                params: { role: profile?.role || 'STUDENT' },
+                params: { role: isMentor ? 'MENTOR' : 'STUDENT' },
               })
             }
             style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
@@ -167,8 +169,14 @@ export default function ProfileScreen() {
                 />
               </View>
               <View>
-                <Text style={styles.menuItemText}>Edit Full Profile</Text>
-                <Text style={styles.menuItemSub}>Skills, bio, academic background</Text>
+                <Text style={styles.menuItemText}>
+                  {isMentor ? 'Edit Mentor Profile' : 'Edit Student Profile'}
+                </Text>
+                <Text style={styles.menuItemSub}>
+                  {isMentor
+                    ? 'Experience, industry, preferred enquiries'
+                    : 'Interests, university, field of study'}
+                </Text>
               </View>
             </View>
             <SymbolView
@@ -178,20 +186,53 @@ export default function ProfileScreen() {
             />
           </Pressable>
 
+          {/* Manage Availability only visible to Mentors */}
+          {isMentor ? (
+            <Pressable
+              onPress={() => router.push(ROUTES.MENTOR_AVAILABILITY)}
+              style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
+              <View style={styles.menuLeft}>
+                <View style={[styles.menuIconContainer, { backgroundColor: '#F0FDF4' }]}>
+                  <SymbolView
+                    name={{ ios: 'calendar.badge.clock', android: 'event_available', web: 'event_available' }}
+                    size={18}
+                    tintColor="#10B981"
+                  />
+                </View>
+                <View>
+                  <Text style={styles.menuItemText}>Manage Availability</Text>
+                  <Text style={styles.menuItemSub}>Configure 30-min booking slots</Text>
+                </View>
+              </View>
+              <SymbolView
+                name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                size={14}
+                tintColor="#9CA3AF"
+              />
+            </Pressable>
+          ) : null}
+
+          {/* Role Switcher */}
           <Pressable
-            onPress={() => router.push(ROUTES.MENTOR_AVAILABILITY)}
+            onPress={() => router.push(ROUTES.CHOOSE_ROLE)}
             style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
             <View style={styles.menuLeft}>
-              <View style={[styles.menuIconContainer, { backgroundColor: '#F0FDF4' }]}>
+              <View style={[styles.menuIconContainer, { backgroundColor: '#F5EEFF' }]}>
                 <SymbolView
-                  name={{ ios: 'calendar.badge.clock', android: 'event_available', web: 'event_available' }}
+                  name={{
+                    ios: 'arrow.triangle.2.circlepath',
+                    android: 'swap_horiz',
+                    web: 'swap_horiz',
+                  }}
                   size={18}
-                  tintColor="#10B981"
+                  tintColor="#7C3AED"
                 />
               </View>
               <View>
-                <Text style={styles.menuItemText}>Manage Availability</Text>
-                <Text style={styles.menuItemSub}>Configure 30-min booking slots</Text>
+                <Text style={styles.menuItemText}>Switch / Change Role</Text>
+                <Text style={styles.menuItemSub}>
+                  Active: {isMentor ? 'Mentor' : 'Student'} · Tap to change
+                </Text>
               </View>
             </View>
             <SymbolView
