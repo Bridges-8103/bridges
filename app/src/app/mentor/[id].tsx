@@ -47,24 +47,7 @@ export default function MentorDetailScreen() {
 
   const handleBookSession = () => {
     if (!mentor) return;
-    Alert.alert(
-      `Request Session with ${mentor.name}`,
-      `Would you like to send a mentorship request to ${mentor.name}?\n\nThey usually reply within 24-48 hours.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send Request',
-          style: 'default',
-          onPress: () => {
-            setBookingSent(true);
-            Alert.alert(
-              'Request Sent! 🎉',
-              `Your mentorship request has been delivered to ${mentor.name}. You'll receive a notification once confirmed.`
-            );
-          },
-        },
-      ]
-    );
+    router.push(ROUTES.mentorBook(mentor.id));
   };
 
   const handleOpenEmail = () => {
