@@ -38,16 +38,9 @@ export default function MiddleGateScreen() {
   }
 
   // 4. If profile was successfully checked and user did NOT setup profile yet (profile === null),
-  // redirect to setup profile screen
+  // redirect to choose role screen so they can choose their role before editing their profile
   if (isProfileSuccess && profile === null) {
-    return (
-      <Redirect
-        href={{
-          pathname: ROUTES.MENTOR_PROFILE,
-          params: { isNew: 'true' },
-        }}
-      />
-    );
+    return <Redirect href={ROUTES.CHOOSE_ROLE} />;
   }
 
   // 5. Profile is set up (or API error occurred), move on to authenticated main app

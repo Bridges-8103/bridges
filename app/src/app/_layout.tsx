@@ -38,7 +38,7 @@ function AuthGate() {
     if (!isSignedIn && isProtectedRoute(rootSegment)) {
       router.replace(ROUTES.WELCOME);
     } else if (isSignedIn && isAuthRoute(rootSegment)) {
-      router.replace(ROUTES.TABS);
+      router.replace(ROUTES.INDEX);
     }
   }, [isLoaded, isSignedIn, router, segments]);
 
@@ -50,6 +50,7 @@ function AuthGate() {
         <Stack.Screen name={ROUTE_SEGMENTS.WELCOME} />
         <Stack.Screen name={ROUTE_SEGMENTS.SIGN_IN} />
         <Stack.Screen name={ROUTE_SEGMENTS.SIGN_UP} />
+        <Stack.Screen name={ROUTE_SEGMENTS.CHOOSE_ROLE} />
         <Stack.Screen name={ROUTE_SEGMENTS.MENTOR_PROFILE} />
         <Stack.Screen name={ROUTE_SEGMENTS.MENTOR_AVAILABILITY} />
         <Stack.Screen

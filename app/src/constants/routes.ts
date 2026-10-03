@@ -6,13 +6,15 @@ export const ROUTES = {
   WELCOME: '/welcome',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',
+  CHOOSE_ROLE: '/choose-role',
   TABS: '/(tabs)',
   MENTOR_PROFILE: '/mentor-profile',
   MENTOR_AVAILABILITY: '/mentor-availability',
   SELECT_TAGS: '/select-tags',
-  mentorDetail: (id: string | number) => `/mentor/${id}` as const,
-  mentorBook: (id: string | number) => `/mentor/${id}/book` as const,
-  mentorConfirmBooking: (id: string | number) => `/mentor/${id}/confirm-booking` as const,
+  mentorDetail: (id: string | number) => `/mentor/${id}` as `/mentor/[id]`,
+  mentorBook: (id: string | number) => `/mentor/${id}/book` as `/mentor/[id]/book`,
+  mentorConfirmBooking: (id: string | number) =>
+    `/mentor/${id}/confirm-booking` as `/mentor/[id]/confirm-booking`,
 } as const;
 
 export type RoutePath =
@@ -31,6 +33,7 @@ export const ROUTE_SEGMENTS = {
   WELCOME: 'welcome',
   SIGN_IN: 'sign-in',
   SIGN_UP: 'sign-up',
+  CHOOSE_ROLE: 'choose-role',
   TABS: '(tabs)',
   MENTOR_PROFILE: 'mentor-profile',
   MENTOR_AVAILABILITY: 'mentor-availability',
@@ -65,6 +68,7 @@ export const AUTH_ROUTE_SEGMENTS: readonly RouteSegment[] = [
  */
 export const PROTECTED_ROUTE_SEGMENTS: readonly RouteSegment[] = [
   ROUTE_SEGMENTS.TABS,
+  ROUTE_SEGMENTS.CHOOSE_ROLE,
   ROUTE_SEGMENTS.MENTOR_PROFILE,
   ROUTE_SEGMENTS.MENTOR_AVAILABILITY,
   ROUTE_SEGMENTS.SELECT_TAGS,
@@ -82,6 +86,7 @@ export const ROUTE_ACCESS_MAP: Record<RouteSegment, RouteAccessType> = {
   [ROUTE_SEGMENTS.WELCOME]: 'auth',
   [ROUTE_SEGMENTS.SIGN_IN]: 'auth',
   [ROUTE_SEGMENTS.SIGN_UP]: 'auth',
+  [ROUTE_SEGMENTS.CHOOSE_ROLE]: 'protected',
   [ROUTE_SEGMENTS.TABS]: 'protected',
   [ROUTE_SEGMENTS.MENTOR_PROFILE]: 'protected',
   [ROUTE_SEGMENTS.MENTOR_AVAILABILITY]: 'protected',
