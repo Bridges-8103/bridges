@@ -9,7 +9,9 @@
     "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.bridges.app"
+      "bundleIdentifier": "com.bridges8103.app",
+      "buildNumber": "33",
+      "appleTeamId": "JR22X95AFT"
     },
     "android": {
       "package": "com.bridges.app",

@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build and Release App (APK & IPA)
 
 on:
   push:
@@ -6,9 +6,20 @@ on:
       - main
       - master
   workflow_dispatch:
+    inputs:
+      build_android:
+        description: 'Build Android APK'
+        required: true
+        type: boolean
+        default: true
+      build_ios:
+        description: 'Build iOS IPA'
+        required: true
+        type: boolean
+        default: true
 
 concurrency:
-  group: build-android-${{ github.ref }}
+  group: build-release-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -21,7 +32,6 @@ jobs:
   version-bump:
     name: Bump Version
     runs-on: ubuntu-latest
-    # Prevent infinite loop: skip if commit was already an automated bump or has [skip ci]
     if: >-
       !contains(github.event.head_commit.message, '[skip ci]') &&
       !startsWith(github.event.head_commit.message, 'chore(release): bump version')
@@ -61,6 +71,7 @@ jobs:
   build-apk:
     name: Build Android APK
     needs: version-bump
+    if: ${{ !cancelled() && (inputs.build_android == true || inputs.build_android == null) }}
     runs-on: ubuntu-latest
     env:
       EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
@@ -126,15 +137,96 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bridges-app-v${{ needs.version-bump.outputs.new_version }}
+          name: bridges-app-android-v${{ needs.version-bump.outputs.new_version }}
           path: app/build-output/bridges-app-v${{ needs.version-bump.outputs.new_version }}.apk
           retention-days: 14
 
-      - name: Create GitHub Release
+  build-ipa:
+    name: Build iOS IPA
+    needs: version-bump
+    if: ${{ !cancelled() && (inputs.build_ios == true || inputs.build_ios == null) }}
+    runs-on: macos-latest
+    env:
+      EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      EXPO_PUBLIC_API_URL: https://bridges-nine.vercel.app
+      CI: "true"
+      CI_ALLOW_PROFILE_UPDATE: "true"
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      APPLE_TEAM_ID: "JR22X95AFT"
+
+    steps:
+      - name: Checkout repository (bumped commit)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up SSH Agent for certificates repository
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MATCH_GIT_PRIVATE_KEY }}
+
+      - name: Clone certificates repository
+        run: git clone git@github.com:Bridges-8103/bridges-certificates.git certificates
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: 'app/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm install
+
+      - name: Prebuild iOS project
+        working-directory: app
+        run: npx expo prebuild --platform ios --clean --no-install
+
+      - name: Install CocoaPods
+        working-directory: app/ios
+        run: pod install
+
+      - name: Build iOS IPA with Fastlane
+        working-directory: app
+        run: fastlane ios build_adhoc
+
+      - name: Prepare IPA for upload
+        run: |
+          IPA_PATH=$(find app/build-output -name "*.ipa" | head -n 1)
+          if [ -n "$IPA_PATH" ]; then
+            echo "Found IPA at: $IPA_PATH"
+            cp "$IPA_PATH" "app/build-output/bridges-app-v${{ needs.version-bump.outputs.new_version }}.ipa"
+          else
+            echo "Error: No IPA file was generated." >&2
+            exit 1
+          fi
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bridges-app-ios-v${{ needs.version-bump.outputs.new_version }}
+          path: app/build-output/bridges-app-v${{ needs.version-bump.outputs.new_version }}.ipa
+          retention-days: 14
+
+  publish-release:
+    name: Publish Release (APK & IPA)
+    needs: [version-bump, build-apk, build-ipa]
+    if: always() && !cancelled() && needs.version-bump.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.version-bump.outputs.new_version }}
           name: Release v${{ needs.version-bump.outputs.new_version }}
-          files: app/build-output/bridges-app-v${{ needs.version-bump.outputs.new_version }}.apk
+          files: release-artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

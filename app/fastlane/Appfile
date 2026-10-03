@@ -1,0 +1,7 @@
+# Fastlane Appfile
+# See https://docs.fastlane.tools/advanced/Appfile/
+
+app_identifier("com.bridges8103.app")
+apple_id(ENV["APPLE_ID"]) if ENV["APPLE_ID"]
+team_id("JR22X95AFT")
+itc_team_id("JR22X95AFT")

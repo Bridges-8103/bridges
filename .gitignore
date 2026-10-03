@@ -122,3 +122,8 @@ web-build/
 *.tsbuildinfo
 
 /crawler/output/
+
+# Certificates repo
+/certificates/
+/bridges-certificates/
+

@@ -44,9 +44,12 @@ const currentCode = appJson.expo.android.versionCode || 1;
 const newCode = currentCode + 1;
 appJson.expo.android.versionCode = newCode;
 
+if (!appJson.expo.ios) appJson.expo.ios = {};
+appJson.expo.ios.buildNumber = String(newCode);
+
 fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2) + '\n', 'utf8');
 
-console.log(`Successfully bumped version: ${currentVersion} -> ${newVersion} (Android versionCode: ${newCode})`);
+console.log(`Successfully bumped version: ${currentVersion} -> ${newVersion} (Android versionCode / iOS buildNumber: ${newCode})`);
 
 // Export to GITHUB_OUTPUT if available in CI
 if (process.env.GITHUB_OUTPUT) {

@@ -2,6 +2,8 @@
 
 # dependencies
 node_modules/
+vendor/
+.bundle/
 
 # Expo
 .expo/
@@ -45,3 +47,9 @@ example
 # generated native folders
 /ios
 /android
+
+# Fastlane & build outputs
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+build-output/

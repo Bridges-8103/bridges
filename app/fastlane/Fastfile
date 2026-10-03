@@ -1,0 +1,196 @@
+# Fastlane Fastfile for Bridges iOS Ad-Hoc Pipeline
+# See https://docs.fastlane.tools/
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Load App Store Connect API Key (from local certificates repo or CI env vars)"
+  lane :load_asc_api_key do
+    local_p8_path = File.expand_path("../../certificates/APP_STORE_KEY_AuthKey_L2S7C78A3L.p8", __dir__)
+
+    if File.exist?(local_p8_path)
+      UI.message("Loading App Store Connect API Key from local certificates folder...")
+      app_store_connect_api_key(
+        key_id: "L2S7C78A3L",
+        issuer_id: "4ae7b216-ab04-4ca3-a27a-08a906ebb2a7",
+        key_filepath: local_p8_path,
+        in_house: false
+      )
+    elsif ENV["APP_STORE_CONNECT_KEY_ID"] && ENV["APP_STORE_CONNECT_ISSUER_ID"] && ENV["APP_STORE_CONNECT_KEY_CONTENT"]
+      UI.message("Loading App Store Connect API Key from environment variables...")
+      app_store_connect_api_key(
+        key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
+        issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+        key_content: ENV["APP_STORE_CONNECT_KEY_CONTENT"],
+        is_key_content_base64: false,
+        in_house: false
+      )
+    else
+      UI.user_error!("App Store Connect API key not found. Ensure certificates/ is present or environment variables are set.")
+    end
+  end
+
+  desc "Load Match encryption password from local certificates repo or CI env var"
+  lane :load_match_password do
+    if ENV["MATCH_PASSWORD"].to_s.empty?
+      local_passphrase_path = File.expand_path("../../certificates/MATCH_PASSPHRASE", __dir__)
+      if File.exist?(local_passphrase_path)
+        ENV["MATCH_PASSWORD"] = File.read(local_passphrase_path).strip
+        UI.message("Loaded MATCH_PASSWORD from certificates/MATCH_PASSPHRASE.")
+      else
+        UI.user_error!("MATCH_PASSWORD is not set and certificates/MATCH_PASSPHRASE was not found.")
+      end
+    end
+  end
+
+  desc "Register device UDIDs from devices.txt in the certificates repository"
+  lane :sync_devices do
+    api_key = load_asc_api_key
+    local_devices_path = File.expand_path("../../certificates/devices.txt", __dir__)
+    devices_path = nil
+
+    if File.exist?(local_devices_path)
+      devices_path = local_devices_path
+    else
+      # Fetch from remote certificates repo if local directory is not present
+      require "tmpdir"
+      temp_dir = Dir.mktmpdir("bridges-devices-")
+      begin
+        sh("git clone --depth 1 git@github.com:Bridges-8103/bridges-certificates.git #{temp_dir}") rescue nil
+        candidate_path = File.join(temp_dir, "devices.txt")
+        devices_path = candidate_path if File.exist?(candidate_path)
+      ensure
+        if devices_path && File.exist?(devices_path)
+          cached_path = File.join(Dir.tmpdir, "devices.txt")
+          FileUtils.cp(devices_path, cached_path)
+          devices_path = cached_path
+        end
+        FileUtils.remove_entry(temp_dir) if Dir.exist?(temp_dir)
+      end
+    end
+
+    if devices_path && File.exist?(devices_path)
+      UI.message("Reading device UDIDs from #{devices_path}...")
+      device_map = {}
+      File.readlines(devices_path).each do |line|
+        line = line.strip
+        next if line.empty? || line.start_with?("#")
+
+        if line.include?("\t")
+          parts = line.split("\t")
+          udid = parts[0].strip
+          name = parts[1].strip
+        elsif line.include?(",")
+          parts = line.split(",")
+          udid = parts[0].strip
+          name = parts[1].strip
+        else
+          udid = line
+          name = "Tester-#{udid[0..7]}"
+        end
+
+        device_map[name] = udid unless udid.empty?
+      end
+
+      if device_map.any?
+        UI.message("Syncing #{device_map.count} device(s) with Apple Developer Portal...")
+        register_devices(
+          api_key: api_key,
+          devices: device_map,
+          team_id: "JR22X95AFT"
+        )
+      else
+        UI.message("No active devices found in devices.txt.")
+      end
+    else
+      UI.message("No devices.txt found in certificates repository. Skipping device registration.")
+    end
+  end
+
+  desc "Sync Ad-Hoc certificates and provisioning profile via Match"
+  lane :match_adhoc do |options|
+    api_key = load_asc_api_key
+    load_match_password
+
+    keychain_name = nil
+    keychain_password = nil
+
+    if is_ci
+      setup_ci
+    else
+      keychain_name = "bridges_fastlane_keychain"
+      keychain_password = "bridges_fastlane_password"
+
+      create_keychain(
+        name: keychain_name,
+        password: keychain_password,
+        default_keychain: false,
+        unlock: true,
+        timeout: 3600,
+        lock_when_sleeps: false
+      ) rescue nil
+
+      unlock_keychain(
+        path: keychain_name,
+        password: keychain_password
+      ) rescue nil
+    end
+
+    readonly_mode = options[:readonly]
+    if readonly_mode.nil?
+      readonly_mode = is_ci && (ENV["CI_ALLOW_PROFILE_UPDATE"] != "true")
+    end
+
+    match_args = {
+      api_key: api_key,
+      type: "adhoc",
+      git_branch: "main",
+      readonly: readonly_mode,
+      force_for_new_devices: true
+    }
+    match_args[:keychain_name] = keychain_name if keychain_name
+    match_args[:keychain_password] = keychain_password if keychain_password
+
+    match(match_args)
+  end
+
+  desc "Build Ad-Hoc IPA package"
+  lane :build_adhoc do
+    sync_devices
+    match_adhoc
+
+    # Ensure build-output directory exists
+    output_dir = File.expand_path("../build-output", __dir__)
+    FileUtils.mkdir_p(output_dir)
+
+    profile_name = ENV["sigh_com.bridges8103.app_adhoc_profile-name"]
+    UI.message("Configuring code signing and building Ad-Hoc IPA with profile: #{profile_name}...")
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "ios/Bridges.xcodeproj",
+      team_id: "JR22X95AFT",
+      bundle_identifier: "com.bridges8103.app",
+      code_sign_identity: "Apple Distribution",
+      profile_name: profile_name
+    )
+
+    gym(
+      workspace: "ios/Bridges.xcworkspace",
+      scheme: "Bridges",
+      configuration: "Release",
+      clean: true,
+      export_method: "ad-hoc",
+      xcargs: "DEVELOPMENT_TEAM=JR22X95AFT",
+      export_options: {
+        method: "ad-hoc",
+        signingStyle: "manual",
+        provisioningProfiles: {
+          "com.bridges8103.app" => profile_name
+        }
+      },
+      output_directory: output_dir,
+      output_name: "bridges-app.ipa"
+    )
+  end
+end
