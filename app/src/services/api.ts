@@ -11,6 +11,9 @@ let authTokenGetter: TokenGetter | null = null;
  */
 export const setAuthTokenGetter = (getter: TokenGetter | null) => {
   authTokenGetter = getter;
+  if (!getter) {
+    delete api.defaults.headers.common['Authorization'];
+  }
 };
 
 const resolveApiBaseUrl = (): string => {
@@ -64,10 +67,15 @@ api.interceptors.request.use(async (config) => {
       const token = await authTokenGetter();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        delete config.headers.Authorization;
       }
     } catch (error) {
       console.error('[api interceptor] Failed to attach Clerk bearer token:', error);
+      delete config.headers.Authorization;
     }
+  } else {
+    delete config.headers.Authorization;
   }
   return config;
 });

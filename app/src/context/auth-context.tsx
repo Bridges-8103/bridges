@@ -1,13 +1,17 @@
 import React, { createContext, useContext, useEffect } from 'react';
-import { useAuth as useClerkAuth, useUser as useClerkUser } from '@clerk/expo';
+import { useAuth as useClerkAuth, useUser as useClerkUser, useClerk } from '@clerk/expo';
+import { tokenCache } from '@clerk/expo/token-cache';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { setAuthTokenGetter } from '@/services/api';
+import { queryClient } from '@/lib/query-client';
 
 export type AuthUser = {
   id: string;
   name: string;
   email: string;
   avatarUri?: string;
-  role?: string;
+  role?: 'STUDENT' | 'MENTOR';
 };
 
 type AuthContextType = {
@@ -15,6 +19,7 @@ type AuthContextType = {
   isSignedIn: boolean;
   isLoaded: boolean;
   signOut: () => Promise<void>;
+  updateRole: (role: 'STUDENT' | 'MENTOR') => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,8 +28,9 @@ const DEFAULT_AVATAR =
   'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn, signOut, getToken } = useClerkAuth();
+  const { isLoaded, isSignedIn, getToken } = useClerkAuth();
   const { user: clerkUser } = useClerkUser();
+  const { signOut: clerkSignOut } = useClerk();
 
   useEffect(() => {
     if (isSignedIn) {
@@ -81,15 +87,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resolvedName = realName || cleanedUsername || cleanEmailName || 'Jamie Chen';
 
+  const metadataRole =
+    typeof clerkUser?.unsafeMetadata?.role === 'string' &&
+    (clerkUser.unsafeMetadata.role.toUpperCase() === 'MENTOR' ||
+      clerkUser.unsafeMetadata.role.toUpperCase() === 'STUDENT')
+      ? (clerkUser.unsafeMetadata.role.toUpperCase() as 'STUDENT' | 'MENTOR')
+      : typeof clerkUser?.publicMetadata?.role === 'string' &&
+        (clerkUser.publicMetadata.role.toUpperCase() === 'MENTOR' ||
+          clerkUser.publicMetadata.role.toUpperCase() === 'STUDENT')
+        ? (clerkUser.publicMetadata.role.toUpperCase() as 'STUDENT' | 'MENTOR')
+        : undefined;
+
   const user: AuthUser | null = isSignedIn
     ? {
         id: clerkUser?.id || 'usr_current',
         name: resolvedName,
-        email: clerkUser?.primaryEmailAddress?.emailAddress || 'student@university.edu',
+        email: clerkUser?.primaryEmailAddress?.emailAddress || 'user@bridges.app',
         avatarUri: clerkUser?.imageUrl || DEFAULT_AVATAR,
-        role: 'STUDENT',
+        role: metadataRole,
       }
     : null;
+
+  const updateRole = async (newRole: 'STUDENT' | 'MENTOR') => {
+    if (clerkUser) {
+      await clerkUser.update({
+        unsafeMetadata: {
+          ...clerkUser.unsafeMetadata,
+          role: newRole,
+        },
+      });
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      // 1. Explicitly sign out on Clerk side to terminate active session & clear cookies/storage
+      await clerkSignOut();
+    } catch (err) {
+      console.warn('[auth] Error during Clerk signOut:', err);
+    }
+
+    // 2. Immediately detach the token getter and delete any default authorization header
+    setAuthTokenGetter(null);
+
+    // 3. Clear all cached queries in TanStack Query to prevent stale user profile & bookings from leaking
+    queryClient.clear();
+
+    // 4. On native devices, clear SecureStore clerk tokens if present
+    try {
+      if (tokenCache?.clearToken) {
+        await tokenCache.clearToken('__clerk_client_jwt');
+      }
+      if (Platform.OS !== 'web') {
+        await SecureStore.deleteItemAsync('__clerk_client_jwt');
+      }
+    } catch {
+      // Key may already be deleted or not present
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -97,9 +152,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         isSignedIn: Boolean(isSignedIn),
         isLoaded: Boolean(isLoaded),
-        signOut: async () => {
-          await signOut();
-        },
+        signOut: handleSignOut,
+        updateRole,
       }}>
       {children}
     </AuthContext.Provider>
