@@ -264,6 +264,15 @@ export class SessionsService {
       throw new BadRequestError("You cannot book a mentorship session with yourself.");
     }
 
+    const studentUser = await prisma.user.findUnique({
+      where: { id: studentUserId },
+    });
+    if (studentUser?.role === "MENTOR") {
+      throw new ForbiddenError(
+        "Mentors cannot book mentorship sessions. Only students can make session reservations."
+      );
+    }
+
     const mentor = await prisma.user.findUnique({
       where: { id: input.mentorId },
     });
