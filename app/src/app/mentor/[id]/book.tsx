@@ -49,7 +49,7 @@ export default function BookMentorSessionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: mentor, isLoading: isMentorLoading } = useMentorDetailQuery(id ?? '');
-  const { data: availableSlots = [], isLoading: isSlotsLoading, refetch } =
+  const { data: availableSlots = [], isLoading: isSlotsLoading } =
     useMentorAvailableSlotsQuery(id ?? '');
 
   const daysList = useMemo(() => getNextDays(14), []);

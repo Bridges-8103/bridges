@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -26,8 +26,6 @@ export default function MentorDetailScreen() {
 
   const { data: mentor, isLoading, isError, refetch } = useMentorDetailQuery(id ?? '');
   const { data: profile } = useProfileQuery();
-
-  const [bookingSent, setBookingSent] = useState(false);
 
   const studentInterests = profile?.studentDetail?.interests ?? [];
 
@@ -349,24 +347,20 @@ export default function MentorDetailScreen() {
         <Pressable
           accessibilityRole="button"
           onPress={handleBookSession}
-          disabled={bookingSent}
           style={({ pressed }) => [
             styles.bookButton,
-            bookingSent && styles.bookButtonDisabled,
             pressed && styles.pressed,
           ]}>
           <SymbolView
             name={{
-              ios: bookingSent ? 'checkmark.circle.fill' : 'calendar.badge.plus',
-              android: bookingSent ? 'check_circle' : 'event',
-              web: bookingSent ? 'check_circle' : 'event',
+              ios: 'calendar.badge.plus',
+              android: 'event',
+              web: 'event',
             }}
             size={18}
             tintColor="#FFFFFF"
           />
-          <Text style={styles.bookButtonText}>
-            {bookingSent ? 'Request Sent' : `Book Mentorship Session`}
-          </Text>
+          <Text style={styles.bookButtonText}>Book Mentorship Session</Text>
         </Pressable>
       </View>
     </SafeAreaView>
