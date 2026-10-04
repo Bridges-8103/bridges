@@ -45,6 +45,9 @@ model User {
   mentorBookings  SessionBooking[] @relation("MentorBookings")
   studentBookings SessionBooking[] @relation("StudentBookings")
 
+  // Push notification device tokens
+  pushTokens      PushToken[]      @relation("UserPushTokens")
+
   @@index([role])
   @@index([verificationStatus])
 }
@@ -219,4 +222,27 @@ model SessionBooking {
   @@index([mentorId, status])
   @@index([studentId, status])
   @@index([batchId])
+}
+
+// ==========================================
+// PUSH NOTIFICATIONS
+// ==========================================
+
+model PushToken {
+  id         Int       @id @default(autoincrement())
+  userId     Int?
+  token      String    @unique
+  platform   String?   // "ios" | "android" | "web"
+  deviceId   String?
+  deviceName String?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  lastUsedAt DateTime?
+
+  user       User?     @relation("UserPushTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([isActive])
 }
