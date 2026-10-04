@@ -2,7 +2,7 @@
   "expo": {
     "name": "Bridges",
     "slug": "app",
-    "version": "1.0.35",
+    "version": "1.0.36",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "app",
@@ -10,12 +10,12 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.bridges8103.app",
-      "buildNumber": "36",
+      "buildNumber": "37",
       "appleTeamId": "JR22X95AFT"
     },
     "android": {
       "package": "com.bridges.app",
-      "versionCode": 36,
+      "versionCode": 37,
       "adaptiveIcon": {
         "backgroundColor": "#140C59",
         "foregroundImage": "./assets/images/splash-icon.png"
