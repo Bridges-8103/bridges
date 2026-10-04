@@ -16,6 +16,7 @@ import {
   ROUTE_SEGMENTS,
 } from '@/constants/routes';
 import { AuthProvider } from '@/context/auth-context';
+import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { queryClient } from '@/lib/query-client';
 
 SplashScreen.preventAutoHideAsync();
@@ -26,6 +27,7 @@ const hasValidPublishableKey =
   publishableKey?.startsWith('pk_live_');
 
 function AuthGate() {
+  usePushNotifications();
   const { isLoaded, isSignedIn } = useClerkAuth();
   const router = useRouter();
   const segments = useSegments();
