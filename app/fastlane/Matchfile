@@ -5,6 +5,6 @@ git_url("git@github.com:Bridges-8103/bridges-certificates.git")
 storage_mode("git")
 type("adhoc")
 app_identifier(["com.bridges8103.app"])
-git_branch("main")
+git_branch("match")
 team_id("JR22X95AFT")
 username(ENV["APPLE_ID"]) if ENV["APPLE_ID"]

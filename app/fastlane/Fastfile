@@ -144,7 +144,7 @@ platform :ios do
     match_args = {
       api_key: api_key,
       type: "adhoc",
-      git_branch: "main",
+      git_branch: "match",
       readonly: readonly_mode,
       force_for_new_devices: true
     }
