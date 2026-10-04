@@ -115,6 +115,29 @@
           "role"
         ]
       },
+      "common": {},
+      "createBookingsSchema": {
+        "type": "object",
+        "properties": {
+          "mentorId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "minimum": 0
+          },
+          "bookings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/sessionBookingRequestItemSchema"
+            },
+            "minItems": 1,
+            "maxItems": 10
+          }
+        },
+        "required": [
+          "mentorId",
+          "bookings"
+        ]
+      },
       "CreateProfileInput": {
         "type": "object",
         "properties": {
@@ -129,6 +152,20 @@
             "maxLength": 50,
             "description": "Public display name"
           },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "MENTOR"
+            ],
+            "default": "STUDENT",
+            "description": "User role"
+          },
           "bio": {
             "type": "string",
             "maxLength": 250,
@@ -142,18 +179,80 @@
           "phoneNumber": {
             "type": "string",
             "description": "Contact phone number"
+          },
+          "university": {
+            "type": "string"
+          },
+          "degree": {
+            "type": "string"
+          },
+          "fieldOfStudy": {
+            "type": "string"
+          },
+          "yearOfStudy": {
+            "type": "integer"
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "careerGoals": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "yearsExperience": {
+            "type": "integer"
+          },
+          "expertise": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredEnquiries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "linkedinUrl": {
+            "type": "string"
+          },
+          "contactEmail": {
+            "type": "string"
           }
         },
         "required": [
           "userId",
-          "displayName"
+          "displayName",
+          "role"
         ],
         "example": {
           "userId": "usr_abc123",
           "displayName": "Jane Doe",
-          "bio": "Software developer and open source enthusiast.",
+          "role": "STUDENT",
+          "bio": "Software developer and student.",
           "avatarUrl": "https://example.com/avatars/janedoe.png",
-          "phoneNumber": "+1234567890"
+          "phoneNumber": "+1234567890",
+          "university": "Stanford University",
+          "degree": "Computer Science",
+          "yearOfStudy": 3
         }
       },
       "createProfileSchema": {
@@ -170,6 +269,20 @@
             "maxLength": 50,
             "description": "Public display name"
           },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "MENTOR"
+            ],
+            "default": "STUDENT",
+            "description": "User role"
+          },
           "bio": {
             "type": "string",
             "maxLength": 250,
@@ -183,18 +296,80 @@
           "phoneNumber": {
             "type": "string",
             "description": "Contact phone number"
+          },
+          "university": {
+            "type": "string"
+          },
+          "degree": {
+            "type": "string"
+          },
+          "fieldOfStudy": {
+            "type": "string"
+          },
+          "yearOfStudy": {
+            "type": "integer"
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "careerGoals": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "yearsExperience": {
+            "type": "integer"
+          },
+          "expertise": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredEnquiries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "linkedinUrl": {
+            "type": "string"
+          },
+          "contactEmail": {
+            "type": "string"
           }
         },
         "required": [
           "userId",
-          "displayName"
+          "displayName",
+          "role"
         ],
         "example": {
           "userId": "usr_abc123",
           "displayName": "Jane Doe",
-          "bio": "Software developer and open source enthusiast.",
+          "role": "STUDENT",
+          "bio": "Software developer and student.",
           "avatarUrl": "https://example.com/avatars/janedoe.png",
-          "phoneNumber": "+1234567890"
+          "phoneNumber": "+1234567890",
+          "university": "Stanford University",
+          "degree": "Computer Science",
+          "yearOfStudy": 3
         }
       },
       "HealthData": {
@@ -279,6 +454,472 @@
           "message": "API and database are healthy."
         }
       },
+      "MentorDetailResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MentorDto",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ]
+      },
+      "mentorDetailResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MentorDto",
+            "nullable": true
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ]
+      },
+      "mentorDetailSchema": {
+        "type": "object",
+        "properties": {
+          "jobTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "company": {
+            "type": "string",
+            "nullable": true
+          },
+          "industry": {
+            "type": "string",
+            "nullable": true
+          },
+          "yearsExperience": {
+            "type": "number",
+            "nullable": true
+          },
+          "expertise": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredEnquiries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "linkedinUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "expertise",
+          "preferredEnquiries"
+        ]
+      },
+      "MentorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Mentor user ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Mentor full name"
+          },
+          "email": {
+            "type": "string",
+            "description": "Contact email"
+          },
+          "role": {
+            "type": "string",
+            "default": "MENTOR",
+            "description": "Role"
+          },
+          "bio": {
+            "type": "string",
+            "nullable": true,
+            "description": "Biography"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Avatar image URL"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true,
+            "description": "Phone number"
+          },
+          "jobTitle": {
+            "type": "string",
+            "nullable": true,
+            "description": "Current academic or professional title"
+          },
+          "company": {
+            "type": "string",
+            "nullable": true,
+            "description": "College / Institution"
+          },
+          "industry": {
+            "type": "string",
+            "nullable": true,
+            "description": "School / Department"
+          },
+          "yearsExperience": {
+            "type": "number",
+            "nullable": true,
+            "description": "Years of experience"
+          },
+          "expertise": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Expertise and research topics"
+          },
+          "preferredEnquiries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Preferred mentorship enquiries"
+          },
+          "linkedinUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "LinkedIn profile URL"
+          },
+          "contactEmail": {
+            "type": "string",
+            "nullable": true,
+            "description": "Direct contact email"
+          },
+          "rating": {
+            "type": "number",
+            "default": 4.9,
+            "description": "Rating score"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "expertise",
+          "preferredEnquiries",
+          "rating"
+        ],
+        "example": {
+          "id": "1761",
+          "name": "Mr Srinivas Kamath",
+          "email": "srinivas.kamath@example.com",
+          "role": "MENTOR",
+          "bio": "PhD researcher in neurosciences.",
+          "avatarUrl": "https://assets.megatunger.com/avatars/mentors/srinivas.kamath.png",
+          "jobTitle": "Higher Degree by Research Candidate",
+          "company": "College of Health",
+          "industry": "School of Pharmacy and Biomedical Sciences",
+          "expertise": [
+            "Neurosciences",
+            "Microbiology",
+            "Pharmacology & Pharmacy"
+          ],
+          "preferredEnquiries": [
+            "Research Collaboration",
+            "Postgraduate Mentoring"
+          ],
+          "rating": 4.9
+        }
+      },
+      "MentorListResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MentorDto"
+                }
+              },
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "pageSize": {
+                "type": "number"
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "items",
+              "total",
+              "page",
+              "pageSize",
+              "hasMore"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ]
+      },
+      "mentorListResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/MentorDto"
+                }
+              },
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "pageSize": {
+                "type": "number"
+              },
+              "hasMore": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "items",
+              "total",
+              "page",
+              "pageSize",
+              "hasMore"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ]
+      },
+      "MentorMatchDto": {
+        "type": "object",
+        "properties": {
+          "mentor": {
+            "$ref": "#/components/schemas/MentorDto"
+          },
+          "score": {
+            "type": "number",
+            "description": "Match percentage score (0 - 100)"
+          },
+          "matchReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Bullet points explaining the match"
+          },
+          "matchingInterests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of overlapping interest keywords"
+          }
+        },
+        "required": [
+          "mentor",
+          "score",
+          "matchReasons",
+          "matchingInterests"
+        ]
+      },
+      "mentorParamSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "mentorQuerySchema": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "skills": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          }
+        }
+      },
+      "mentorSlotsQuerySchema": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "mentorSuggestionsQuerySchema": {
+        "type": "object",
+        "properties": {
+          "interests": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          }
+        }
+      },
+      "MentorSuggestionsResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MentorMatchDto"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ]
+      },
+      "mentorSuggestionsResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MentorMatchDto"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ]
+      },
       "Profile": {
         "type": "object",
         "properties": {
@@ -290,9 +931,21 @@
             "type": "string",
             "description": "Associated user ID"
           },
+          "email": {
+            "type": "string",
+            "description": "User email address"
+          },
           "displayName": {
             "type": "string",
             "description": "Public display name"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "MENTOR"
+            ],
+            "description": "User role"
           },
           "bio": {
             "type": "string",
@@ -305,6 +958,14 @@
           "phoneNumber": {
             "type": "string",
             "description": "Contact phone number"
+          },
+          "studentDetail": {
+            "$ref": "#/components/schemas/studentDetailSchema",
+            "nullable": true
+          },
+          "mentorDetail": {
+            "$ref": "#/components/schemas/mentorDetailSchema",
+            "nullable": true
           },
           "createdAt": {
             "type": "string",
@@ -319,16 +980,34 @@
           "id",
           "userId",
           "displayName",
+          "role",
           "createdAt",
           "updatedAt"
         ],
         "example": {
-          "id": "prof_12345",
+          "id": "1",
           "userId": "usr_abc123",
+          "email": "jane@university.edu",
           "displayName": "Jane Doe",
-          "bio": "Software developer and open source enthusiast.",
+          "role": "STUDENT",
+          "bio": "Software engineering student.",
           "avatarUrl": "https://example.com/avatars/janedoe.png",
           "phoneNumber": "+1234567890",
+          "studentDetail": {
+            "university": "Stanford University",
+            "degree": "BS",
+            "fieldOfStudy": "Computer Science",
+            "yearOfStudy": 3,
+            "interests": [
+              "AI",
+              "Startups"
+            ],
+            "skills": [
+              "TypeScript",
+              "React"
+            ],
+            "careerGoals": "Full-stack engineer"
+          },
           "createdAt": "2026-09-22T00:00:00.000Z",
           "updatedAt": "2026-09-22T00:00:00.000Z"
         }
@@ -387,10 +1066,12 @@
         "example": {
           "status": 200,
           "data": {
-            "id": "prof_12345",
+            "id": "1",
             "userId": "usr_abc123",
+            "email": "jane@university.edu",
             "displayName": "Jane Doe",
-            "bio": "Software developer and open source enthusiast.",
+            "role": "STUDENT",
+            "bio": "Software engineering student.",
             "avatarUrl": "https://example.com/avatars/janedoe.png",
             "phoneNumber": "+1234567890",
             "createdAt": "2026-09-22T00:00:00.000Z",
@@ -421,10 +1102,12 @@
         "example": {
           "status": 200,
           "data": {
-            "id": "prof_12345",
+            "id": "1",
             "userId": "usr_abc123",
+            "email": "jane@university.edu",
             "displayName": "Jane Doe",
-            "bio": "Software developer and open source enthusiast.",
+            "role": "STUDENT",
+            "bio": "Software engineering student.",
             "avatarUrl": "https://example.com/avatars/janedoe.png",
             "phoneNumber": "+1234567890",
             "createdAt": "2026-09-22T00:00:00.000Z",
@@ -432,6 +1115,411 @@
           },
           "message": "Profile retrieved successfully."
         }
+      },
+      "registerPushTokenSchema": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(ExponentPushToken|ExpoPushToken)\\[.*\\]$"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "ios",
+              "android",
+              "web"
+            ]
+          },
+          "deviceId": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "deviceName": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "sendTestPushSchema": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^(ExponentPushToken|ExpoPushToken)\\[.*\\]$"
+          },
+          "userId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": true,
+                "minimum": 0
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "default": "Bridges Notification Test"
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "default": "This is a test notification from the Bridges backend!"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {},
+            "x-jsonschema-propertyNames": {
+              "type": "string"
+            }
+          },
+          "channelId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "body"
+        ]
+      },
+      "sessionBookingRequestItemSchema": {
+        "type": "object",
+        "properties": {
+          "slotId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "minimum": 0
+          },
+          "topic": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "slotId",
+          "topic"
+        ]
+      },
+      "setAvailabilitySchema": {
+        "type": "object",
+        "properties": {
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/setAvailabilitySlotItemSchema"
+            },
+            "minItems": 1,
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "slots"
+        ]
+      },
+      "setAvailabilitySlotItemSchema": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isAvailable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "startTime",
+          "isAvailable"
+        ]
+      },
+      "studentDetailSchema": {
+        "type": "object",
+        "properties": {
+          "university": {
+            "type": "string",
+            "nullable": true
+          },
+          "degree": {
+            "type": "string",
+            "nullable": true
+          },
+          "fieldOfStudy": {
+            "type": "string",
+            "nullable": true
+          },
+          "yearOfStudy": {
+            "type": "number",
+            "nullable": true
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "careerGoals": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "interests",
+          "skills"
+        ]
+      },
+      "tagTypeSchema": {
+        "type": "string",
+        "enum": [
+          "INTEREST",
+          "SKILL",
+          "BOTH"
+        ]
+      },
+      "TaxonomyCategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Unique category ID"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Category slug"
+          },
+          "name": {
+            "type": "string",
+            "description": "Category display name"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Icon name (SF Symbol / phosphor / lucide)"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Display order"
+          },
+          "mentorCount": {
+            "type": "number",
+            "description": "Total active mentors in this category"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxonomyTag"
+            },
+            "description": "List of tags under this category"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "icon",
+          "sortOrder",
+          "mentorCount",
+          "tags"
+        ],
+        "example": {
+          "id": 1,
+          "slug": "tech-engineering",
+          "name": "Technology & Engineering",
+          "icon": "laptopcomputer",
+          "sortOrder": 1,
+          "mentorCount": 921,
+          "tags": []
+        }
+      },
+      "taxonomyQuerySchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/tagTypeSchema"
+              }
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "search": {
+            "type": "string"
+          }
+        }
+      },
+      "TaxonomyResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxonomyCategory"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ]
+      },
+      "taxonomyResponseSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "number"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaxonomyCategory"
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "data",
+          "message"
+        ]
+      },
+      "TaxonomyTag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "Unique tag ID"
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-friendly tag slug"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tag display name"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/tagTypeSchema"
+              }
+            ],
+            "description": "Tag type: INTEREST, SKILL, or BOTH"
+          },
+          "isCurated": {
+            "type": "boolean",
+            "description": "Whether this tag is featured/curated for quick selection"
+          },
+          "mentorCount": {
+            "type": "number",
+            "description": "Total active mentors with this expertise in the database"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Alternative names or synonyms for matching"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "type",
+          "isCurated",
+          "mentorCount",
+          "aliases"
+        ],
+        "example": {
+          "id": 1,
+          "slug": "artificial-intelligence",
+          "name": "Artificial Intelligence",
+          "type": "BOTH",
+          "isCurated": true,
+          "mentorCount": 154,
+          "aliases": [
+            "AI",
+            "GenAI"
+          ]
+        }
+      },
+      "unregisterPushTokenSchema": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "updateBookingStatusSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "CONFIRMED",
+              "DECLINED",
+              "CANCELLED"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "meetingLink": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
       },
       "UpdateProfileInput": {
         "type": "object",
@@ -441,6 +1529,14 @@
             "minLength": 2,
             "maxLength": 50,
             "description": "Public display name"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "MENTOR"
+            ],
+            "description": "User role"
           },
           "bio": {
             "type": "string",
@@ -455,6 +1551,63 @@
           "phoneNumber": {
             "type": "string",
             "description": "Contact phone number"
+          },
+          "university": {
+            "type": "string"
+          },
+          "degree": {
+            "type": "string"
+          },
+          "fieldOfStudy": {
+            "type": "string"
+          },
+          "yearOfStudy": {
+            "type": "integer"
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "careerGoals": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "yearsExperience": {
+            "type": "integer"
+          },
+          "expertise": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredEnquiries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "linkedinUrl": {
+            "type": "string"
+          },
+          "contactEmail": {
+            "type": "string"
           }
         },
         "example": {
@@ -471,6 +1624,14 @@
             "maxLength": 50,
             "description": "Public display name"
           },
+          "role": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "MENTOR"
+            ],
+            "description": "User role"
+          },
           "bio": {
             "type": "string",
             "maxLength": 250,
@@ -484,6 +1645,63 @@
           "phoneNumber": {
             "type": "string",
             "description": "Contact phone number"
+          },
+          "university": {
+            "type": "string"
+          },
+          "degree": {
+            "type": "string"
+          },
+          "fieldOfStudy": {
+            "type": "string"
+          },
+          "yearOfStudy": {
+            "type": "integer"
+          },
+          "interests": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "careerGoals": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "yearsExperience": {
+            "type": "integer"
+          },
+          "expertise": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "preferredEnquiries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "linkedinUrl": {
+            "type": "string"
+          },
+          "contactEmail": {
+            "type": "string"
           }
         },
         "example": {
@@ -740,6 +1958,72 @@
         }
       }
     },
+    "/bookings": {
+      "get": {
+        "operationId": "get-bookings",
+        "summary": "Get user's bookings (as student or mentor)",
+        "description": "",
+        "tags": [
+          "Bookings"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-bookings",
+        "summary": "Reserve one or multiple session slots",
+        "description": "",
+        "tags": [
+          "Bookings"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/bookings/{id}/status": {
+      "patch": {
+        "operationId": "patch-bookings-{id}-status",
+        "summary": "Update booking status (Mentor: confirm/decline, Student: cancel)",
+        "description": "",
+        "tags": [
+          "Bookings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "operationId": "get-health",
@@ -762,6 +2046,430 @@
           },
           "400": {
             "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/mentor/availability": {
+      "get": {
+        "operationId": "get-mentor-availability",
+        "summary": "Get authenticated mentor's configured slots",
+        "description": "",
+        "tags": [
+          "Mentor"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "put": {
+        "operationId": "put-mentor-availability",
+        "summary": "Bulk save/toggle availability slots for authenticated mentor",
+        "description": "",
+        "tags": [
+          "Mentor"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/mentors": {
+      "get": {
+        "operationId": "get-mentors",
+        "summary": "Search and list mentors",
+        "description": "Retrieves a paginated list of mentors with optional filters for keyword search, taxonomy field, and skills.",
+        "tags": [
+          "Mentors"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "example"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "example"
+          },
+          {
+            "in": "query",
+            "name": "skills",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "example": "example"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "example": 1
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "example": "example"
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "example"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MentorListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/mentors/{id}": {
+      "get": {
+        "operationId": "get-mentors-{id}",
+        "summary": "Fetch mentor public profile by ID",
+        "description": "Retrieves complete profile details for a specific mentor by ID.",
+        "tags": [
+          "Mentors"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MentorDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/mentors/suggestions": {
+      "get": {
+        "operationId": "get-mentors-suggestions",
+        "summary": "Get suggested mentors by student interests",
+        "description": "Retrieves mentors scored and ranked by relevance to profile interests.",
+        "tags": [
+          "Mentors"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "interests",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            },
+            "example": "example"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "example": "example"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MentorSuggestionsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/mentors/{id}/slots": {
+      "get": {
+        "operationId": "get-mentors-{id}-slots",
+        "summary": "Fetch available booking slots for a mentor",
+        "description": "Retrieves upcoming 30-min unreserved slots configured by the mentor.",
+        "tags": [
+          "Mentors"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "example": "example"
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "example": "example"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/notifications/test": {
+      "post": {
+        "operationId": "post-notifications-test",
+        "summary": "Send test push notification",
+        "description": "Sends a test push notification to a specified token or user.",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/sendTestPushSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/common"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/notifications/tokens": {
+      "post": {
+        "operationId": "post-notifications-tokens",
+        "summary": "Register device push token",
+        "description": "Registers an Expo push token for the authenticated user's device.",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/registerPushTokenSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/common"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-notifications-tokens",
+        "summary": "Unregister device push token",
+        "description": "Unregisters an Expo push token on logout or permission revocation.",
+        "tags": [
+          "Notifications"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/common"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
           },
           "500": {
             "$ref": "#/components/responses/500"
@@ -854,6 +2562,53 @@
             "$ref": "#/components/responses/500"
           }
         }
+      },
+      "patch": {
+        "operationId": "patch-profile",
+        "summary": "Update current user profile",
+        "description": "Updates details of the current authenticated user's profile.",
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "403": {
+            "$ref": "#/components/responses/403"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
       }
     },
     "/profile/{id}": {
@@ -914,7 +2669,7 @@
       "patch": {
         "operationId": "patch-profile-{id}",
         "summary": "Update profile details",
-        "description": "Updates details of an existing profile by ID.",
+        "description": "Updates details of an existing profile by ID. Enforces ownership authorization.",
         "tags": [
           "Profile"
         ],
@@ -977,7 +2732,7 @@
       "delete": {
         "operationId": "delete-profile-{id}",
         "summary": "Delete profile",
-        "description": "Permanently deletes a profile by ID.",
+        "description": "Permanently deletes a profile by ID. Enforces ownership authorization.",
         "tags": [
           "Profile"
         ],
@@ -1021,6 +2776,89 @@
           }
         }
       }
+    },
+    "/taxonomy": {
+      "get": {
+        "operationId": "get-taxonomy",
+        "summary": "Get categorized taxonomy (categories, interests, skills)",
+        "description": "Retrieves all categories with tags derived directly from active mentors.",
+        "tags": [
+          "Taxonomy"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/tagTypeSchema"
+                }
+              ]
+            },
+            "example": "example"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "example"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "example"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxonomyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/taxonomy/sync": {
+      "post": {
+        "operationId": "post-taxonomy-sync",
+        "summary": "Sync taxonomy categories and tags directly from mentor details",
+        "description": "Extracts and classifies categories and expertise topics from mentors.",
+        "tags": [
+          "Taxonomy"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
     }
   },
   "tags": [
@@ -1028,10 +2866,25 @@
       "name": "Auth"
     },
     {
+      "name": "Bookings"
+    },
+    {
       "name": "Health"
     },
     {
+      "name": "Mentor"
+    },
+    {
+      "name": "Mentors"
+    },
+    {
+      "name": "Notifications"
+    },
+    {
       "name": "Profile"
+    },
+    {
+      "name": "Taxonomy"
     }
   ]
 }

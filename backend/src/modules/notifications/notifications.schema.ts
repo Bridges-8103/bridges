@@ -28,7 +28,7 @@ export const sendTestPushSchema = z.object({
   userId: z.union([z.number().int().positive(), z.string().trim()]).optional(),
   title: z.string().trim().min(1).default("Bridges Notification Test"),
   body: z.string().trim().min(1).default("This is a test notification from the Bridges backend!"),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
   channelId: z.string().trim().optional(),
 });
 
