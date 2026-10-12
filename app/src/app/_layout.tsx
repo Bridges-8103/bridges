@@ -60,6 +60,7 @@ function AuthGate() {
           options={{ presentation: 'modal', headerShown: false }}
         />
         <Stack.Screen name={ROUTE_SEGMENTS.MENTOR_DETAIL} />
+        <Stack.Screen name={ROUTE_SEGMENTS.MESSAGES_THREAD} />
       </Stack>
       <StatusBar style="dark" />
     </>
