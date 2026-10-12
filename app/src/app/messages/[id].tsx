@@ -36,8 +36,7 @@ export default function MessageThreadScreen() {
   const [inputContent, setInputContent] = useState('');
 
   // Fetch conversation detail / participant info
-  const { data: conversation, isLoading: isDetailLoading } =
-    useConversationDetailQuery(conversationId);
+  const { data: conversation } = useConversationDetailQuery(conversationId);
 
   // Fetch messages with smart polling (every 3.5s while chat screen is open)
   const { data: messages = [], isLoading: isMessagesLoading } = useMessagesQuery(

@@ -21,6 +21,7 @@ import {
   useUpdateBookingStatusMutation,
 } from '@/services/sessions';
 import type { BookingDto, BookingStatus } from '@/services/sessions/types';
+import { getBookingConversation } from '@/services/messages';
 
 function formatBookingTime(startTimeIso: string, endTimeIso: string): { dateStr: string; timeStr: string } {
   const start = new Date(startTimeIso);
@@ -168,6 +169,20 @@ export default function SessionsScreen() {
         },
       ]
     );
+  };
+
+  const [loadingChatId, setLoadingChatId] = useState<number | null>(null);
+
+  const handleOpenChat = async (booking: BookingDto) => {
+    try {
+      setLoadingChatId(booking.id);
+      const result = await getBookingConversation(booking.id);
+      router.push(ROUTES.messageThread(result.conversationId));
+    } catch (err: any) {
+      Alert.alert('Notice', err?.message || 'Chat is not available yet.');
+    } finally {
+      setLoadingChatId(null);
+    }
   };
 
   const handleJoinCall = (booking: BookingDto) => {
@@ -466,6 +481,31 @@ export default function SessionsScreen() {
                       <View style={styles.actionRow}>
                         <Pressable
                           accessibilityRole="button"
+                          onPress={() => handleOpenChat(booking)}
+                          disabled={loadingChatId === booking.id}
+                          style={({ pressed }) => [
+                            styles.chatButton,
+                            pressed && styles.pressed,
+                          ]}>
+                          {loadingChatId === booking.id ? (
+                            <ActivityIndicator size="small" color="#3B5DF6" />
+                          ) : (
+                            <>
+                              <SymbolView
+                                name={{
+                                  ios: 'bubble.left.and.bubble.right.fill',
+                                  android: 'chat',
+                                  web: 'chat',
+                                }}
+                                size={15}
+                                tintColor="#3B5DF6"
+                              />
+                              <Text style={styles.chatButtonText}>Message</Text>
+                            </>
+                          )}
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
                           onPress={() => handleJoinCall(booking)}
                           style={({ pressed }) => [
                             styles.joinButton,
@@ -556,6 +596,31 @@ export default function SessionsScreen() {
                     {/* Student Actions */}
                     {booking.status === 'CONFIRMED' ? (
                       <View style={styles.actionRow}>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => handleOpenChat(booking)}
+                          disabled={loadingChatId === booking.id}
+                          style={({ pressed }) => [
+                            styles.chatButton,
+                            pressed && styles.pressed,
+                          ]}>
+                          {loadingChatId === booking.id ? (
+                            <ActivityIndicator size="small" color="#3B5DF6" />
+                          ) : (
+                            <>
+                              <SymbolView
+                                name={{
+                                  ios: 'bubble.left.and.bubble.right.fill',
+                                  android: 'chat',
+                                  web: 'chat',
+                                }}
+                                size={15}
+                                tintColor="#3B5DF6"
+                              />
+                              <Text style={styles.chatButtonText}>Message</Text>
+                            </>
+                          )}
+                        </Pressable>
                         <Pressable
                           accessibilityRole="button"
                           onPress={() => handleJoinCall(booking)}
@@ -912,6 +977,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  chatButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+    gap: 6,
+  },
+  chatButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#3B5DF6',
   },
   joinButton: {
     flex: 1,
