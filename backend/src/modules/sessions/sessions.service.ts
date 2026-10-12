@@ -17,6 +17,7 @@ import {
 } from "@/lib/errors";
 import { type AuthUser } from "@/lib/auth";
 import { resolveClerkUser } from "@/lib/clerkUser";
+import { MessagesService } from "@/modules/messages";
 
 export class SessionsService {
   /**
@@ -459,6 +460,22 @@ export class SessionsService {
       maxWait: 20000,
       timeout: 60000, // 60s timeout (1 minute)
     });
+
+    // Auto-connect student and mentor upon confirmed session
+    if (nextStatus === BookingStatus.CONFIRMED) {
+      try {
+        await MessagesService.ensureConnectionForBooking(
+          booking.studentId,
+          booking.mentorId,
+          booking.id
+        );
+      } catch (connErr) {
+        console.error(
+          `[SessionsService.updateBookingStatus] Failed to ensure connection for booking ${bookingId}:`,
+          connErr
+        );
+      }
+    }
 
     return this.mapBookingToDto(updated);
   }
