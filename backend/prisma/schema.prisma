@@ -48,6 +48,12 @@ model User {
   // Push notification device tokens
   pushTokens      PushToken[]      @relation("UserPushTokens")
 
+  // Connections and Messaging
+  connectionsInitiated Connection[]              @relation("ConnectionInitiator")
+  connectionsReceived  Connection[]              @relation("ConnectionReceiver")
+  conversations        ConversationParticipant[] @relation("UserConversations")
+  sentMessages         Message[]                 @relation("SentMessages")
+
   @@index([role])
   @@index([verificationStatus])
 }
@@ -246,3 +252,96 @@ model PushToken {
   @@index([token])
   @@index([isActive])
 }
+
+// ==========================================
+// CONNECTIONS & MESSAGING
+// ==========================================
+
+enum ConnectionStatus {
+  PENDING
+  CONNECTED
+  DECLINED
+  BLOCKED
+}
+
+enum ConnectionType {
+  SESSION_BOOKING
+  DIRECT_REQUEST
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+model Connection {
+  id           Int              @id @default(autoincrement())
+  initiatorId  Int
+  receiverId   Int
+  status       ConnectionStatus @default(CONNECTED)
+  type         ConnectionType   @default(SESSION_BOOKING)
+  bookingId    Int?             // Reference to the triggering booking, if any
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  initiator    User             @relation("ConnectionInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  receiver     User             @relation("ConnectionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  conversation Conversation?
+
+  @@unique([initiatorId, receiverId])
+  @@index([initiatorId, status])
+  @@index([receiverId, status])
+}
+
+model Conversation {
+  id              Int                       @id @default(autoincrement())
+  connectionId    Int?                      @unique
+  lastMessageAt   DateTime?
+  lastMessageText String?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  connection      Connection?               @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  participants    ConversationParticipant[]
+  messages        Message[]
+
+  @@index([lastMessageAt])
+}
+
+model ConversationParticipant {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  userId         Int
+  lastReadAt     DateTime?
+  isArchived     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  senderId       Int?
+  content        String       @db.Text
+  messageType    MessageType  @default(TEXT)
+  fileUrl        String?
+  fileName       String?
+  fileSize       Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User?        @relation("SentMessages", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
