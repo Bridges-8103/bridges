@@ -8,6 +8,7 @@
     "scheme": "app",
     "userInterfaceStyle": "light",
     "ios": {
+      "supportsTablet": true,
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.bridges8103.app",
       "buildNumber": "39",
