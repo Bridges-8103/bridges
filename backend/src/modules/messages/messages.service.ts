@@ -507,7 +507,7 @@ export class MessagesService {
     }
 
     // Try finding existing connection for this booking or between the two users
-    let connection = await prisma.connection.findFirst({
+    const connection = await prisma.connection.findFirst({
       where: {
         OR: [
           { bookingId: booking.id },
