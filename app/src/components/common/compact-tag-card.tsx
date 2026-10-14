@@ -82,6 +82,8 @@ export function CompactTagCard({
                 </ThemedText>
                 {onRemoveTag && (
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${tag}`}
                     onPress={() => onRemoveTag(tag)}
                     hitSlop={8}
                     style={styles.removeIconBtn}>
