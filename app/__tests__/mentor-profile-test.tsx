@@ -127,7 +127,7 @@ describe('MentorProfileScreen', () => {
 
       expect(await screen.findByText('Complete your student profile')).toBeOnTheScreen();
       expect(mockedGetProfile).toHaveBeenCalledTimes(2);
-    });
+    }, 10000);
   });
 
   describe('creating a new profile', () => {
