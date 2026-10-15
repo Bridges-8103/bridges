@@ -17,6 +17,7 @@ import {
 } from "@/lib/errors";
 import { type AuthUser } from "@/lib/auth";
 import { resolveClerkUser } from "@/lib/clerkUser";
+import { ConnectionsService } from "../connections/connections.service";
 
 export class SessionsService {
   /**
@@ -459,6 +460,15 @@ export class SessionsService {
       maxWait: 20000,
       timeout: 60000, // 60s timeout (1 minute)
     });
+
+    // Automatically connect student and mentor when booking is confirmed
+    if (nextStatus === BookingStatus.CONFIRMED) {
+      await ConnectionsService.autoConnectOnSessionConfirmed(
+        booking.studentId,
+        booking.mentorId,
+        booking.id
+      );
+    }
 
     return this.mapBookingToDto(updated);
   }
