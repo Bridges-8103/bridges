@@ -59,6 +59,7 @@ function AuthGate() {
           name={ROUTE_SEGMENTS.SELECT_TAGS}
           options={{ presentation: 'modal', headerShown: false }}
         />
+        <Stack.Screen name={ROUTE_SEGMENTS.CONNECTIONS} />
         <Stack.Screen name={ROUTE_SEGMENTS.MENTOR_DETAIL} />
       </Stack>
       <StatusBar style="dark" />

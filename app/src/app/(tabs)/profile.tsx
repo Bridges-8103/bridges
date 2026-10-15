@@ -16,12 +16,16 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRole } from '@/hooks/use-role';
 import { ROUTES } from '@/constants/routes';
 import { useProfileQuery } from '@/services/profile/queries';
+import { useConnectionsQuery, useConnectionRequestsQuery } from '@/services/connections';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { isMentor } = useRole();
   const { data: profile, isPending, isError, error, refetch, isRefetching } = useProfileQuery();
+  const { data: connectionsData } = useConnectionsQuery();
+  const { data: requestsData } = useConnectionRequestsQuery();
+  const incomingCount = requestsData?.incoming?.length ?? 0;
 
   // Clerk identity is the trustworthy fallback while the profile loads or
   // before the user has created one. Never render invented placeholder data.
@@ -151,6 +155,40 @@ export default function ProfileScreen() {
         {/* Action Menu */}
         <View style={styles.menuSection}>
           <Text style={styles.menuTitle}>Account & Settings</Text>
+
+          {/* My Connections */}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(ROUTES.CONNECTIONS)}
+            style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
+            <View style={styles.menuLeft}>
+              <View style={[styles.menuIconContainer, { backgroundColor: '#EFF6FF' }]}>
+                <SymbolView
+                  name={{ ios: 'person.2.fill', android: 'people', web: 'people' }}
+                  size={18}
+                  tintColor="#2563EB"
+                />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>My Connections</Text>
+                <Text style={styles.menuItemSub}>
+                  {connectionsData?.total ?? 0} connected · {incomingCount} new invitation{incomingCount !== 1 ? 's' : ''}
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {incomingCount > 0 && (
+                <View style={styles.menuBadge}>
+                  <Text style={styles.menuBadgeText}>{incomingCount}</Text>
+                </View>
+              )}
+              <SymbolView
+                name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                size={14}
+                tintColor="#9CA3AF"
+              />
+            </View>
+          </Pressable>
 
           <Pressable
             onPress={() =>
@@ -494,6 +532,17 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     fontSize: 15,
     fontWeight: '700',
+  },
+  menuBadge: {
+    backgroundColor: '#3B5DF6',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  menuBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
   },
   pressed: {
     opacity: 0.8,
