@@ -46,17 +46,17 @@ const FIELD_CONFIG: Record<
   },
   interests: {
     title: 'Select Interests',
-    subtitle: 'Fields and research topics you want to explore',
+    subtitle: 'Fields and topics you want to explore',
     tagType: 'INTEREST',
     colorKey: 'accentPurple',
-    placeholder: 'Search interests (e.g. AI, Cancer, Finance)...',
+    placeholder: 'Search interests (e.g. Technology, Design, Business)...',
   },
   expertise: {
     title: 'Select Mentorship Expertise',
-    subtitle: 'Topics you can guide students on',
+    subtitle: 'Topics you can guide mentees on',
     tagType: 'BOTH',
     colorKey: 'accentPurple',
-    placeholder: 'Search topics (e.g. Machine Learning, Neuroscience)...',
+    placeholder: 'Search topics (e.g. Engineering, Design, Leadership)...',
   },
 };
 
@@ -339,7 +339,7 @@ function SelectTagsContent({
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={accent} />
           <ThemedText style={{ color: theme.mutedText, marginTop: 12 }}>
-            Loading mentor-backed topics...
+            Loading topics...
           </ThemedText>
         </View>
       ) : isError && categories.length === 0 ? (

@@ -121,8 +121,7 @@ export default function ChooseRoleScreen() {
                   )}
                 </View>
                 <Text style={styles.roleDescription}>
-                  I&apos;m looking for guidance, career advice, and connections with industry
-                  professionals.
+                  I want to connect with mentors, get career guidance, and explore professional paths.
                 </Text>
               </View>
 
@@ -146,12 +145,12 @@ export default function ChooseRoleScreen() {
             {/* Perks */}
             <View style={[styles.rolePerksList, { borderTopColor: '#E5EDFF' }]}>
               <PerkItem
-                text="Browse 200+ verified industry mentors"
+                text="Browse mentors across diverse fields and industries"
                 color="#4A6CF7"
               />
               <PerkItem text="Book 1-on-1 mentorship sessions" color="#4A6CF7" />
               <PerkItem
-                text="Get personalised career and university guidance"
+                text="Get guidance tailored to your goals"
                 color="#4A6CF7"
               />
             </View>
@@ -192,8 +191,7 @@ export default function ChooseRoleScreen() {
                   )}
                 </View>
                 <Text style={styles.roleDescription}>
-                  I want to share my industry experience, guide students, and support the next
-                  generation.
+                  I want to share my experience, guide mentees, and help others grow.
                 </Text>
               </View>
 
@@ -221,11 +219,11 @@ export default function ChooseRoleScreen() {
                 color="#7C3AED"
               />
               <PerkItem
-                text="Guide students in your field of expertise"
+                text="Guide mentees in your field"
                 color="#7C3AED"
               />
               <PerkItem
-                text="Build your personal leadership profile"
+                text="Expand your leadership and mentoring skills"
                 color="#7C3AED"
               />
             </View>

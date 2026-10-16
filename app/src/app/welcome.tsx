@@ -25,11 +25,11 @@ export default function WelcomeScreen() {
         {/* Hero Title & Subtitle */}
         <View style={styles.textSection}>
           <Text style={styles.title}>
-            Your career starts{"\n"}with the right mentor.
+            Connect with mentors{"\n"}who can guide your path.
           </Text>
           <Text style={styles.subtitle}>
-            Connect with professionals from top companies. Get personalised
-            guidance for your university journey.
+            Find experienced mentors across diverse fields. Book sessions and
+            get practical advice.
           </Text>
         </View>
 
@@ -40,7 +40,7 @@ export default function WelcomeScreen() {
               <Text style={styles.featureIcon}>🎓</Text>
             </View>
             <Text style={styles.featureText}>
-              Connect with industry mentors
+              Connect with experienced mentors
             </Text>
           </View>
 
@@ -55,7 +55,7 @@ export default function WelcomeScreen() {
             <View style={styles.featureIconContainer}>
               <Text style={styles.featureIcon}>🚀</Text>
             </View>
-            <Text style={styles.featureText}>Accelerate your career path</Text>
+            <Text style={styles.featureText}>Gain clarity and grow your career</Text>
           </View>
         </View>
 

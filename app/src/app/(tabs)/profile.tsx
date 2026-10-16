@@ -106,7 +106,7 @@ export default function ProfileScreen() {
                           ? styles.badgeMentorText
                           : styles.badgeStudentText,
                       ]}>
-                      {profile.role === 'MENTOR' ? '🌟 Mentor' : '🎓 Student'}
+                      {profile.role === 'MENTOR' ? 'Mentor' : 'Mentee'}
                     </Text>
                   </View>
 
@@ -208,12 +208,12 @@ export default function ProfileScreen() {
               </View>
               <View>
                 <Text style={styles.menuItemText}>
-                  {isMentor ? 'Edit Mentor Profile' : 'Edit Student Profile'}
+                  {isMentor ? 'Edit Mentor Profile' : 'Edit Mentee Profile'}
                 </Text>
                 <Text style={styles.menuItemSub}>
                   {isMentor
                     ? 'Experience, industry, preferred enquiries'
-                    : 'Interests, university, field of study'}
+                    : 'Interests, education, field of study'}
                 </Text>
               </View>
             </View>
@@ -269,7 +269,7 @@ export default function ProfileScreen() {
               <View>
                 <Text style={styles.menuItemText}>Switch / Change Role</Text>
                 <Text style={styles.menuItemSub}>
-                  Active: {isMentor ? 'Mentor' : 'Student'} · Tap to change
+                  Active: {isMentor ? 'Mentor' : 'Mentee'} · Tap to change
                 </Text>
               </View>
             </View>

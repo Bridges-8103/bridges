@@ -108,7 +108,7 @@ export default function SignInScreen() {
           {/* Heading */}
           <View style={styles.header}>
             <Text style={styles.title}>Welcome back 👋</Text>
-            <Text style={styles.subtitle}>Sign in to continue your mentorship journey.</Text>
+            <Text style={styles.subtitle}>Sign in to continue to Bridges.</Text>
           </View>
 
           {/* Social Sign-In Buttons */}

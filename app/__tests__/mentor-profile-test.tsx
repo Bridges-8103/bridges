@@ -141,7 +141,7 @@ describe('MentorProfileScreen', () => {
       expect(await screen.findByText('Complete your student profile')).toBeOnTheScreen();
       expect(screen.getByText('Step 3 of 3')).toBeOnTheScreen();
       expect(screen.getByDisplayValue('Jamie Chen')).toBeOnTheScreen();
-      expect(screen.getByText('Academic Background')).toBeOnTheScreen();
+      expect(screen.getByText('Education Background')).toBeOnTheScreen();
       expect(screen.queryByText('Professional Experience')).toBeNull();
       expect(screen.getByText('Finish Setup')).toBeOnTheScreen();
     });
@@ -155,7 +155,7 @@ describe('MentorProfileScreen', () => {
       expect(screen.getByDisplayValue('Sam Rivera')).toBeOnTheScreen();
       expect(screen.getByText('Professional Experience')).toBeOnTheScreen();
       expect(screen.getByText('Social Links')).toBeOnTheScreen();
-      expect(screen.queryByText('Academic Background')).toBeNull();
+      expect(screen.queryByText('Education Background')).toBeNull();
     });
 
     it("falls back to the signed-in user's role when no param is given", async () => {
@@ -174,11 +174,11 @@ describe('MentorProfileScreen', () => {
 
       expect(screen.getByText('Complete your mentor profile')).toBeOnTheScreen();
       expect(screen.getByText('Professional Experience')).toBeOnTheScreen();
-      expect(screen.queryByText('Academic Background')).toBeNull();
+      expect(screen.queryByText('Education Background')).toBeNull();
 
       await fireEvent.press(screen.getByText('Student'));
 
-      expect(screen.getByText('Academic Background')).toBeOnTheScreen();
+      expect(screen.getByText('Education Background')).toBeOnTheScreen();
       expect(screen.queryByText('Professional Experience')).toBeNull();
     });
 
@@ -212,11 +212,11 @@ describe('MentorProfileScreen', () => {
 
       await fireEvent.changeText(screen.getByPlaceholderText('Your name'), '  Jamie Chen  ');
       await fireEvent.changeText(
-        screen.getByPlaceholderText(/Share your career ambitions/),
+        screen.getByPlaceholderText(/Share your background, interests/),
         '  Aspiring ML engineer.  '
       );
       await fireEvent.changeText(
-        screen.getByPlaceholderText('e.g. Software Engineer, AI Researcher'),
+        screen.getByPlaceholderText('e.g. Software Engineer, Product Designer'),
         'AI Researcher'
       );
       await fireEvent.press(screen.getByText('Year 3'));

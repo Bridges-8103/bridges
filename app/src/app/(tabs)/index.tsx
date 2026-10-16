@@ -158,10 +158,10 @@ export default function HomeScreen() {
                 </View>
                 <View style={styles.pendingAlertContent}>
                   <Text style={styles.pendingAlertTitle}>
-                    {pendingMentorRequests.length} Student {pendingMentorRequests.length === 1 ? 'Request' : 'Requests'} Waiting
+                    {pendingMentorRequests.length} Session {pendingMentorRequests.length === 1 ? 'Request' : 'Requests'} Waiting
                   </Text>
                   <Text style={styles.pendingAlertSub}>
-                    Students have booked session slots with you. Tap to review and accept.
+                    Mentees have booked session slots with you. Tap to review and accept.
                   </Text>
                 </View>
                 <SymbolView
@@ -177,7 +177,7 @@ export default function HomeScreen() {
               <View style={styles.nextSessionCardMentor}>
                 <View style={styles.nextSessionHeader}>
                   <View style={styles.nextSessionPill}>
-                    <Text style={styles.nextSessionPillText}>Next Student Mentorship</Text>
+                    <Text style={styles.nextSessionPillText}>Next Mentorship Session</Text>
                   </View>
                   <Text style={styles.nextSessionDate}>
                     {formatNextSessionDate(nextSession.slot.startTime)}
@@ -230,7 +230,7 @@ export default function HomeScreen() {
                     tintColor="#7C3AED"
                   />
                 </View>
-                <Text style={styles.mentorQuickTitle}>Student Sessions</Text>
+                <Text style={styles.mentorQuickTitle}>Mentee Sessions</Text>
                 <Text style={styles.mentorQuickSub}>
                   {bookings.length} total scheduled
                 </Text>
@@ -244,7 +244,7 @@ export default function HomeScreen() {
           <View style={styles.nextSessionCardStudent}>
             <View style={styles.nextSessionHeader}>
               <View style={styles.nextSessionPillStudent}>
-                <Text style={styles.nextSessionPillTextStudent}>Upcoming Mentorship</Text>
+                <Text style={styles.nextSessionPillTextStudent}>Upcoming Session</Text>
               </View>
               <Text style={styles.nextSessionDateStudent}>
                 {formatNextSessionDate(nextSession.slot.startTime)}
@@ -268,7 +268,7 @@ export default function HomeScreen() {
         {/* Section: Browse by Field */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
-            {isMentor ? 'Browse academic fields' : 'Browse by field'}
+            Browse by field
           </Text>
           <Pressable
             onPress={() => {
@@ -298,11 +298,11 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* Section: Suggested Mentors (Students) or Colleague Network (Mentors) */}
+        {/* Section: Suggested Mentors (Students) or Peer Network (Mentors) */}
         <View style={[styles.sectionHeader, styles.topMentorsHeader]}>
           <View style={styles.sectionTitleRow}>
             <Text style={styles.sectionTitle}>
-              {isMentor ? 'Faculty & Colleague Network' : 'Suggested mentors'}
+              {isMentor ? 'Peer Network' : 'Suggested mentors'}
             </Text>
             {isStudent && hasInterests && !isFiltering && (
               <View style={styles.sparkleBadge}>
@@ -337,7 +337,7 @@ export default function HomeScreen() {
             <View style={styles.calloutTextWrap}>
               <Text style={styles.calloutTitle}>Personalize your suggestions</Text>
               <Text style={styles.calloutSubtitle}>
-                Add your research interests to match with university mentors in your field.
+                Add your interests to see relevant mentor recommendations.
               </Text>
             </View>
             <SymbolView
@@ -348,7 +348,7 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        {/* Mentor notice banner: mentors can view peers, but bookings are for students */}
+        {/* Mentor notice banner */}
         {isMentor && !isFiltering && (
           <View style={styles.mentorNetworkNotice}>
             <SymbolView
@@ -357,7 +357,7 @@ export default function HomeScreen() {
               tintColor="#7C3AED"
             />
             <Text style={styles.mentorNetworkNoticeText}>
-              Explore peer researchers and mentors across university departments. Mentorship bookings are reserved for student accounts.
+              Explore mentors across different fields. Mentorship bookings are reserved for mentee accounts.
             </Text>
           </View>
         )}
@@ -402,7 +402,7 @@ export default function HomeScreen() {
                 key={match.mentor.id}
                 mentor={match.mentor}
                 score={isStudent && hasInterests ? match.score : undefined}
-                matchReason={isStudent ? match.matchReasons[0] : 'Faculty Colleague'}
+                matchReason={isStudent ? match.matchReasons[0] : 'Peer Mentor'}
                 onPress={() => handleSelectMentor(match.mentor.id)}
               />
             ))}

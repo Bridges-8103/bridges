@@ -117,7 +117,7 @@ export default function ExploreScreen() {
         <View style={styles.header}>
           <View style={styles.headerTitleRow}>
             <Text style={styles.title}>
-              {isMentor ? 'Mentor & Faculty Directory' : 'Find Your Mentor'}
+              {isMentor ? 'Mentor Directory' : 'Find a Mentor'}
             </Text>
             <View
               style={[
@@ -129,14 +129,14 @@ export default function ExploreScreen() {
                   styles.roleBadgeText,
                   isMentor ? styles.roleBadgeTextMentor : styles.roleBadgeTextStudent,
                 ]}>
-                {isMentor ? '🌟 Colleague Network' : '🎓 Find Mentors'}
+                {isMentor ? 'Peer Network' : 'Mentors'}
               </Text>
             </View>
           </View>
           <Text style={styles.subtitle}>
             {isMentor
-              ? 'Search university faculty, researchers, and fellow mentors across departments.'
-              : 'Explore university researchers and faculty mentors matched to your academic goals.'}
+              ? 'Connect with mentors and peers across industries and fields.'
+              : 'Discover mentors matched to your interests and career goals.'}
           </Text>
         </View>
 
@@ -149,7 +149,7 @@ export default function ExploreScreen() {
               tintColor="#7C3AED"
             />
             <Text style={styles.mentorBannerText}>
-              You can search and view peer profiles. Mentorship session booking is reserved for student accounts.
+              Browse and connect with peers. 1-on-1 session booking is available for mentee accounts.
             </Text>
           </View>
         )}
@@ -168,7 +168,7 @@ export default function ExploreScreen() {
                 styles.segmentBtnText,
                 exploreTab === 'mentors' && styles.segmentBtnTextActive,
               ]}>
-              🌟 Mentors & Faculty
+              Mentors
             </Text>
           </Pressable>
 
@@ -184,7 +184,7 @@ export default function ExploreScreen() {
                 styles.segmentBtnText,
                 exploreTab === 'students' && styles.segmentBtnTextActive,
               ]}>
-              🎓 Peers & Students
+              Peers & Mentees
             </Text>
           </Pressable>
         </View>
@@ -201,10 +201,10 @@ export default function ExploreScreen() {
             onChangeText={setSearchQuery}
             placeholder={
               exploreTab === 'students'
-                ? 'Search students by name, degree, or university…'
+                ? 'Search by name, background, or institution…'
                 : isMentor
-                ? 'Search colleague by name, department, or field…'
-                : 'Search by mentor name, role, department, or skill…'
+                ? 'Search by name, organization, or field…'
+                : 'Search by mentor name, role, company, or skill…'
             }
             placeholderTextColor="#9CA3AF"
             style={styles.searchInput}
@@ -300,16 +300,16 @@ export default function ExploreScreen() {
         {exploreTab === 'students' ? (
           <View style={styles.section}>
             <View style={styles.resultsHeader}>
-              <Text style={styles.sectionLabel}>Students & Peers</Text>
+              <Text style={styles.sectionLabel}>Peers & Mentees</Text>
               <Text style={styles.matchCountBadge}>
-                {`${studentsResult?.total ?? 0} Students`}
+                {`${studentsResult?.total ?? 0} Members`}
               </Text>
             </View>
 
             {isStudentsLoading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#3B5DF6" />
-                <Text style={styles.loadingText}>Loading students…</Text>
+                <Text style={styles.loadingText}>Loading members…</Text>
               </View>
             ) : studentsResult && studentsResult.items.length > 0 ? (
               <View style={styles.matchesList}>
@@ -319,9 +319,9 @@ export default function ExploreScreen() {
               </View>
             ) : (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyTitle}>No students found</Text>
+                <Text style={styles.emptyTitle}>No members found</Text>
                 <Text style={styles.emptySubtitle}>
-                  Try clearing your search query or check back later as peers join.
+                  Try clearing your search query or check back later.
                 </Text>
               </View>
             )}
@@ -333,7 +333,7 @@ export default function ExploreScreen() {
                 {isFiltering
                   ? 'Search Results'
                   : isMentor
-                  ? 'Faculty & Mentors'
+                  ? 'Mentors'
                   : 'Recommended Mentors'}
               </Text>
               <Text style={styles.matchCountBadge}>
@@ -346,7 +346,7 @@ export default function ExploreScreen() {
             {isLoading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#3B5DF6" />
-                <Text style={styles.loadingText}>Loading mentors from database…</Text>
+                <Text style={styles.loadingText}>Loading mentors…</Text>
               </View>
             ) : isFiltering ? (
               // Filtered mentors list
@@ -392,7 +392,7 @@ export default function ExploreScreen() {
                   <Text style={styles.emptySubtitle}>
                     {isStudent
                       ? 'Add interests above to unlock personalized recommendations.'
-                      : 'Check back later as new faculty join the platform.'}
+                      : 'Check back later as new mentors join the platform.'}
                   </Text>
                 </View>
               )
@@ -454,7 +454,7 @@ function MentorListItem({
           </View>
 
           <Text style={styles.mentorRole} numberOfLines={1}>
-            {mentor.jobTitle || 'Faculty Researcher'}
+            {mentor.jobTitle || 'Mentor'}
           </Text>
 
           {mentor.company ? (

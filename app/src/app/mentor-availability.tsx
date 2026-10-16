@@ -115,7 +115,7 @@ export default function MentorAvailabilityScreen() {
     if (booked) {
       Alert.alert(
         'Slot Reserved',
-        'This slot has an active booking request from a student and cannot be disabled.'
+        'This slot has an active booking request from a mentee and cannot be disabled.'
       );
       return;
     }
@@ -239,7 +239,7 @@ export default function MentorAvailabilityScreen() {
               marginTop: 6,
               lineHeight: 20,
             }}>
-            Availability configuration is reserved for mentors to set up booking slots for students.
+            Availability configuration is reserved for mentors to set up booking slots for mentees.
           </Text>
           <Pressable
             onPress={() => router.back()}

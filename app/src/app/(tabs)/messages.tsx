@@ -19,14 +19,14 @@ export default function MessagesScreen() {
     {
       id: 'c1',
       mentor: mockMentors[0], // Dr. Priya Nair
-      lastMessage: "I've reviewed your thesis draft! Let's discuss it at 3 PM today.",
+      lastMessage: "I've reviewed your project notes. Let's discuss them at 3 PM today.",
       time: '10:45 AM',
       unreadCount: 1,
     },
     {
       id: 'c2',
       mentor: mockMentors[1], // Marcus Okonkwo
-      lastMessage: 'Check out this paper on distributed Raft consensus.',
+      lastMessage: 'Check out these resources on system architecture.',
       time: 'Yesterday',
     },
     {

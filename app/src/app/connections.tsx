@@ -247,7 +247,7 @@ export default function ConnectionsScreen() {
                                     ? styles.roleBadgeTextMentor
                                     : styles.roleBadgeTextStudent,
                                 ]}>
-                                {u.role === 'MENTOR' ? '🌟 Mentor' : '🎓 Student'}
+                                {u.role === 'MENTOR' ? 'Mentor' : 'Mentee'}
                               </Text>
                             </View>
                           </View>
@@ -300,7 +300,7 @@ export default function ConnectionsScreen() {
                 />
                 <Text style={styles.emptyTitle}>No connections yet</Text>
                 <Text style={styles.emptySubtitle}>
-                  Explore mentors and peers across the university to expand your academic network.
+                  Discover mentors and peers to build your professional network.
                 </Text>
                 <Pressable
                   accessibilityRole="button"

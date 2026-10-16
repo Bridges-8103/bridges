@@ -29,9 +29,9 @@ export function MentorAvatarCluster() {
         <Image source={{ uri: AVATARS.bottomRight }} style={[styles.avatar, styles.bottomRight]} />
       </View>
 
-      {/* 200+ Mentors Badge */}
+      {/* Mentors Community Badge */}
       <View style={styles.badge}>
-        <Text style={styles.badgeText}>200+ Mentors</Text>
+        <Text style={styles.badgeText}>Mentors & Peers</Text>
       </View>
     </View>
   );

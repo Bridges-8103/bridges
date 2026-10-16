@@ -128,7 +128,7 @@ export default function ConfirmBookingScreen() {
     if (isMentor) {
       Alert.alert(
         'Booking Unavailable',
-        'As a mentor, you can receive session requests from students, but cannot book sessions.'
+        'As a mentor, you can receive session requests, but session booking is reserved for mentees.'
       );
       return;
     }
@@ -196,7 +196,7 @@ export default function ConfirmBookingScreen() {
           </Pressable>
           <View style={styles.headerTitleWrap}>
             <Text style={styles.title}>Booking Unavailable</Text>
-            <Text style={styles.subtitle}>Reserved for students</Text>
+            <Text style={styles.subtitle}>Reserved for mentees</Text>
           </View>
           <View style={{ width: 40 }} />
         </View>
@@ -208,7 +208,7 @@ export default function ConfirmBookingScreen() {
             tintColor="#7C3AED"
           />
           <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', marginTop: 12 }}>
-            Booking Reserved for Students
+            Booking Available for Mentees
           </Text>
           <Text
             style={{
@@ -219,7 +219,7 @@ export default function ConfirmBookingScreen() {
               maxWidth: 280,
               marginTop: 6,
             }}>
-            Mentors cannot book mentorship sessions. Only students can make session reservations.
+            Session booking is reserved for mentee accounts.
           </Text>
           <Pressable
             accessibilityRole="button"

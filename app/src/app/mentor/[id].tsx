@@ -52,7 +52,7 @@ export default function MentorDetailScreen() {
     if (isMentor) {
       Alert.alert(
         'Booking Unavailable',
-        'As a mentor, you can view peer profiles and network with colleagues, but session bookings are reserved for students.'
+        'As a mentor, you can view peer profiles and network, but session bookings are reserved for mentees.'
       );
       return;
     }
@@ -215,7 +215,7 @@ export default function MentorDetailScreen() {
             </View>
             <View style={styles.statPill}>
               <Text style={styles.statIcon}>🎓</Text>
-              <Text style={styles.statText}>Verified Faculty</Text>
+              <Text style={styles.statText}>Verified Mentor</Text>
             </View>
             {matchingTags.length > 0 && (
               <View style={[styles.statPill, styles.statMatchPill]}>
@@ -230,7 +230,7 @@ export default function MentorDetailScreen() {
         {/* About Section */}
         {mentor.bio ? (
           <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Text style={styles.sectionHeading}>About & Research</Text>
+            <Text style={styles.sectionHeading}>About</Text>
             <Text style={styles.bioText}>{mentor.bio}</Text>
           </View>
         ) : null}
@@ -364,7 +364,7 @@ export default function MentorDetailScreen() {
                 tintColor="#7C3AED"
               />
               <Text style={styles.mentorNoticeText}>
-                Mentorship booking is reserved for student accounts.
+                Session booking is available for mentee accounts.
               </Text>
             </View>
             <View style={styles.mentorActionButtonsRow}>
