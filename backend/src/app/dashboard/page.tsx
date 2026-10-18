@@ -1,38 +1,13 @@
-// Mock data for overall platform metrics and meeting stats
-const MOCK_PLATFORM_STATS = {
-  totalUsers: 128,
-  openReports: 4,
-  weeklyMeetings: 42,
-  cancelledMeetings: 5,
-  activeStudentsCount: 28,
-  activeMentorsCount: 12,
-};
+import { AdminService } from '@/modules/admin/admin.service';
+import { requireAdminPage } from '@/lib/adminAuth';
+import { formatDate } from '@/utils/formatDate';
 
-const MOCK_STUDENT_MEETINGS = [
-  { id: 'st_1', name: 'Alex Johnson', email: 'alex@example.com', meetingCount: 5 },
-  { id: 'st_2', name: 'Sarah Connor', email: 'sarah@example.com', meetingCount: 4 },
-  { id: 'st_3', name: 'David Lee', email: 'david@example.com', meetingCount: 3 },
-  { id: 'st_4', name: 'Emma Watson', email: 'emma@example.com', meetingCount: 2 },
-];
-
-const MOCK_MENTOR_MEETINGS = [
-  { id: 'mn_1', name: 'Dr. Robert Ford', email: 'robert@example.com', attendedCount: 12, specialty: 'System Architecture' },
-  { id: 'mn_2', name: 'Elena Rostova', email: 'elena@example.com', attendedCount: 9, specialty: 'Frontend & UI/UX' },
-  { id: 'mn_3', name: 'Marcus Aurelius', email: 'marcus@example.com', attendedCount: 7, specialty: 'Cloud Security' },
-];
-
-const MOCK_INACTIVE_STUDENTS = [
-  { id: 'st_10', name: 'Michael Scott', email: 'michael@example.com', joinedDate: '2026-09-01' },
-  { id: 'st_11', name: 'Jim Halpert', email: 'jim@example.com', joinedDate: '2026-09-05' },
-  { id: 'st_12', name: 'Pam Beesly', email: 'pam@example.com', joinedDate: '2026-09-10' },
-];
-
-const MOCK_INACTIVE_MENTORS = [
-  { id: 'mn_10', name: 'Dwight Schrute', email: 'dwight@example.com', specialty: 'DevOps' },
-  { id: 'mn_11', name: 'Angela Martin', email: 'angela@example.com', specialty: 'Data Science' },
-];
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardOverviewPage() {
+  await requireAdminPage();
+  const data = await AdminService.getOverview();
+
   return (
     <div className="space-y-8">
       <div>
@@ -50,7 +25,7 @@ export default async function DashboardOverviewPage() {
             Total Users
           </p>
           <p className="text-3xl font-bold text-slate-900 mt-2">
-            {MOCK_PLATFORM_STATS.totalUsers}
+            {data.totalUsers}
           </p>
         </div>
 
@@ -60,7 +35,7 @@ export default async function DashboardOverviewPage() {
             Open Reports
           </p>
           <p className="text-3xl font-bold text-rose-600 mt-2">
-            {MOCK_PLATFORM_STATS.openReports}
+            {data.openReports}
           </p>
         </div>
 
@@ -70,7 +45,7 @@ export default async function DashboardOverviewPage() {
             Meetings This Week
           </p>
           <p className="text-3xl font-bold text-indigo-600 mt-2">
-            {MOCK_PLATFORM_STATS.weeklyMeetings}
+            {data.weeklyMeetings}
           </p>
         </div>
 
@@ -80,7 +55,7 @@ export default async function DashboardOverviewPage() {
             Cancelled
           </p>
           <p className="text-3xl font-bold text-amber-600 mt-2">
-            {MOCK_PLATFORM_STATS.cancelledMeetings}
+            {data.cancelledMeetings}
           </p>
         </div>
 
@@ -90,7 +65,7 @@ export default async function DashboardOverviewPage() {
             Active Students
           </p>
           <p className="text-3xl font-bold text-teal-600 mt-2">
-            {MOCK_PLATFORM_STATS.activeStudentsCount}
+            {data.activeStudentsCount}
           </p>
         </div>
 
@@ -100,7 +75,7 @@ export default async function DashboardOverviewPage() {
             Active Mentors
           </p>
           <p className="text-3xl font-bold text-cyan-600 mt-2">
-            {MOCK_PLATFORM_STATS.activeMentorsCount}
+            {data.activeMentorsCount}
           </p>
         </div>
       </div>
@@ -113,7 +88,7 @@ export default async function DashboardOverviewPage() {
             <h2 className="font-semibold text-slate-800">
               Student Meeting Activity
             </h2>
-            <span className="text-xs text-slate-400">Top Students</span>
+            <span className="text-xs text-slate-400">All-time, confirmed &amp; completed</span>
           </div>
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
@@ -123,7 +98,7 @@ export default async function DashboardOverviewPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {MOCK_STUDENT_MEETINGS.map((student) => (
+              {data.topStudents.map((student) => (
                 <tr key={student.id} className="hover:bg-slate-50/50">
                   <td className="px-5 py-3.5">
                     <div className="font-medium text-slate-900">
@@ -146,7 +121,7 @@ export default async function DashboardOverviewPage() {
             <h2 className="font-semibold text-slate-800">
               Mentor Attended Meetings
             </h2>
-            <span className="text-xs text-slate-400">Most Active Mentors</span>
+            <span className="text-xs text-slate-400">All-time, confirmed &amp; completed</span>
           </div>
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
@@ -157,14 +132,14 @@ export default async function DashboardOverviewPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {MOCK_MENTOR_MEETINGS.map((mentor) => (
+              {data.topMentors.map((mentor) => (
                 <tr key={mentor.id} className="hover:bg-slate-50/50">
                   <td className="px-5 py-3.5">
                     <div className="font-medium text-slate-900">{mentor.name}</div>
                     <div className="text-xs text-slate-400">{mentor.email}</div>
                   </td>
                   <td className="px-5 py-3.5 text-xs text-slate-500">
-                    {mentor.specialty}
+                    {mentor.specialty ?? '—'}
                   </td>
                   <td className="px-5 py-3.5 text-right font-semibold text-teal-600">
                     {mentor.attendedCount}
@@ -186,7 +161,7 @@ export default async function DashboardOverviewPage() {
               Students with No Meetings
             </h2>
             <span className="text-xs bg-amber-50 text-amber-700 font-semibold px-2.5 py-1 rounded-full border border-amber-200">
-              {MOCK_INACTIVE_STUDENTS.length} Inactive
+              {data.inactiveStudentCount} Inactive
             </span>
           </div>
           <table className="w-full text-left text-sm">
@@ -197,7 +172,7 @@ export default async function DashboardOverviewPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {MOCK_INACTIVE_STUDENTS.map((student) => (
+              {data.inactiveStudents.map((student) => (
                 <tr key={student.id} className="hover:bg-slate-50/50">
                   <td className="px-5 py-3.5">
                     <div className="font-medium text-slate-900">
@@ -206,7 +181,7 @@ export default async function DashboardOverviewPage() {
                     <div className="text-xs text-slate-400">{student.email}</div>
                   </td>
                   <td className="px-5 py-3.5 text-xs text-slate-500">
-                    {student.joinedDate}
+                    {formatDate(student.joinedDate, 'en-US', { month: 'short' })}
                   </td>
                 </tr>
               ))}
@@ -222,7 +197,7 @@ export default async function DashboardOverviewPage() {
               Mentors with No Meetings Attended
             </h2>
             <span className="text-xs bg-rose-50 text-rose-700 font-semibold px-2.5 py-1 rounded-full border border-rose-200">
-              {MOCK_INACTIVE_MENTORS.length} Inactive
+              {data.inactiveMentorCount} Inactive
             </span>
           </div>
           <table className="w-full text-left text-sm">
@@ -233,14 +208,14 @@ export default async function DashboardOverviewPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {MOCK_INACTIVE_MENTORS.map((mentor) => (
+              {data.inactiveMentors.map((mentor) => (
                 <tr key={mentor.id} className="hover:bg-slate-50/50">
                   <td className="px-5 py-3.5">
                     <div className="font-medium text-slate-900">{mentor.name}</div>
                     <div className="text-xs text-slate-400">{mentor.email}</div>
                   </td>
                   <td className="px-5 py-3.5 text-xs text-slate-500">
-                    {mentor.specialty}
+                    {mentor.specialty ?? '—'}
                   </td>
                 </tr>
               ))}

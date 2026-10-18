@@ -1,52 +1,67 @@
-import React, { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { mockMentors } from '@/data/mock-mentors';
+import { ROUTES } from '@/constants/routes';
+import { useRole } from '@/hooks/use-role';
+import { useConversationsQuery } from '@/services/messaging';
 
-type Conversation = {
-  id: string;
-  mentor: (typeof mockMentors)[0];
-  lastMessage: string;
-  time: string;
-  unreadCount?: number;
-};
+function formatConversationTime(iso: string | null): string {
+  if (!iso) return '';
+  const date = new Date(iso);
+  const now = new Date();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+  if (date.getTime() >= startOfToday) {
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  if (date.getTime() >= startOfToday - dayMs) return 'Yesterday';
+  if (date.getTime() >= startOfToday - 6 * dayMs) {
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  }
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 export default function MessagesScreen() {
+  const router = useRouter();
+  const { isMentor } = useRole();
   const [search, setSearch] = useState('');
 
-  const conversations: Conversation[] = [
-    {
-      id: 'c1',
-      mentor: mockMentors[0], // Dr. Priya Nair
-      lastMessage: "I've reviewed your thesis draft! Let's discuss it at 3 PM today.",
-      time: '10:45 AM',
-      unreadCount: 1,
-    },
-    {
-      id: 'c2',
-      mentor: mockMentors[1], // Marcus Okonkwo
-      lastMessage: 'Check out this paper on distributed Raft consensus.',
-      time: 'Yesterday',
-    },
-    {
-      id: 'c3',
-      mentor: mockMentors[3], // Sarah Chen
-      lastMessage: 'Great chat yesterday! Send over your updated resume whenever you are ready.',
-      time: '3d ago',
-    },
-  ];
+  const { data: conversations = [], isLoading, isRefetching, refetch } = useConversationsQuery();
 
-  const filtered = conversations.filter((c) =>
-    c.mentor.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(
+    () =>
+      conversations.filter((c) =>
+        c.participant.name.toLowerCase().includes(search.trim().toLowerCase())
+      ),
+    [conversations, search]
   );
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}>
         <View style={styles.header}>
           <Text style={styles.title}>Messages</Text>
-          <Text style={styles.subtitle}>Direct conversations with your mentors.</Text>
+          <Text style={styles.subtitle}>
+            {isMentor
+              ? 'Direct conversations with your students.'
+              : 'Direct conversations with your mentors.'}
+          </Text>
         </View>
 
         {/* Search */}
@@ -66,37 +81,67 @@ export default function MessagesScreen() {
         </View>
 
         {/* Conversation List */}
-        <View style={styles.list}>
-          {filtered.map((conv) => (
-            <Pressable
-              key={conv.id}
-              onPress={() =>
-                Alert.alert(conv.mentor.name, `Conversation with ${conv.mentor.name}\n\n"${conv.lastMessage}"`)
-              }
-              style={({ pressed }) => [styles.convoItem, pressed && styles.pressed]}>
-              <View style={styles.avatarWrapper}>
-                <Image source={{ uri: conv.mentor.avatarUri }} style={styles.avatar} />
-                {conv.mentor.isOnline && <View style={styles.onlineBadge} />}
-              </View>
+        {isLoading ? (
+          <View style={styles.centerBox}>
+            <ActivityIndicator size="large" color="#3B5DF6" />
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={styles.centerBox}>
+            <Text style={styles.emptyTitle}>
+              {conversations.length === 0 ? 'No conversations yet' : 'No matches'}
+            </Text>
+            {conversations.length === 0 ? (
+              <Text style={styles.emptySubtitle}>
+                {isMentor
+                  ? 'Once you confirm a session with a student, you can chat with them here.'
+                  : 'Once a mentor confirms your session, you can chat with them here.'}
+              </Text>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.list}>
+            {filtered.map((conv) => (
+              <Pressable
+                key={conv.id}
+                onPress={() => router.push(ROUTES.chat(conv.id))}
+                style={({ pressed }) => [styles.convoItem, pressed && styles.pressed]}>
+                {conv.participant.avatarUrl ? (
+                  <Image source={{ uri: conv.participant.avatarUrl }} style={styles.avatar} />
+                ) : (
+                  <View style={[styles.avatar, styles.avatarFallback]}>
+                    <Text style={styles.avatarInitial}>
+                      {conv.participant.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
 
-              <View style={styles.convoMeta}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.mentorName}>{conv.mentor.name}</Text>
-                  <Text style={styles.time}>{conv.time}</Text>
+                <View style={styles.convoMeta}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.mentorName} numberOfLines={1}>
+                      {conv.participant.name}
+                    </Text>
+                    <Text style={styles.time}>{formatConversationTime(conv.lastMessageAt)}</Text>
+                  </View>
+                  <Text
+                    style={[styles.lastMessage, conv.unreadCount > 0 && styles.lastMessageUnread]}
+                    numberOfLines={1}>
+                    {conv.lastMessage
+                      ? `${conv.lastMessage.isMine ? 'You: ' : ''}${conv.lastMessage.body}`
+                      : 'Say hello 👋'}
+                  </Text>
                 </View>
-                <Text style={styles.lastMessage} numberOfLines={1}>
-                  {conv.lastMessage}
-                </Text>
-              </View>
 
-              {Boolean(conv.unreadCount) && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>{conv.unreadCount}</Text>
-                </View>
-              )}
-            </Pressable>
-          ))}
-        </View>
+                {conv.unreadCount > 0 ? (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadText}>
+                      {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -155,24 +200,36 @@ const styles = StyleSheet.create({
     borderColor: '#F3F4F6',
     gap: 12,
   },
-  avatarWrapper: {
-    position: 'relative',
-  },
   avatar: {
     width: 48,
     height: 48,
     borderRadius: 24,
   },
-  onlineBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#10B981',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
+  avatarFallback: {
+    backgroundColor: '#E0E7FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    color: '#3B5DF6',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  centerBox: {
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 48,
+    paddingHorizontal: 16,
+  },
+  emptyTitle: {
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  emptySubtitle: {
+    color: '#6B7280',
+    fontSize: 13,
+    textAlign: 'center',
   },
   convoMeta: {
     flex: 1,
@@ -181,6 +238,7 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 8,
   },
   mentorName: {
     color: '#111827',
@@ -194,6 +252,10 @@ const styles = StyleSheet.create({
   lastMessage: {
     color: '#6B7280',
     fontSize: 13,
+  },
+  lastMessageUnread: {
+    color: '#111827',
+    fontWeight: '600',
   },
   unreadBadge: {
     backgroundColor: '#3B5DF6',

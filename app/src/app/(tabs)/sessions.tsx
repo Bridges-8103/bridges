@@ -20,6 +20,7 @@ import {
   useBookingsQuery,
   useUpdateBookingStatusMutation,
 } from '@/services/sessions';
+import { useStartConversationMutation } from '@/services/messaging';
 import type { BookingDto, BookingStatus } from '@/services/sessions/types';
 
 function formatBookingTime(startTimeIso: string, endTimeIso: string): { dateStr: string; timeStr: string } {
@@ -63,6 +64,7 @@ export default function SessionsScreen() {
   } = useBookingsQuery(isMentor ? 'MENTOR' : 'STUDENT');
 
   const updateStatusMutation = useUpdateBookingStatusMutation();
+  const startConversationMutation = useStartConversationMutation();
 
   // Active filter tab
   const [mentorTab, setMentorTab] = useState<'pending' | 'confirmed' | 'all'>('pending');
@@ -168,6 +170,15 @@ export default function SessionsScreen() {
         },
       ]
     );
+  };
+
+  const handleMessage = async (participantId: number) => {
+    try {
+      const conversation = await startConversationMutation.mutateAsync(participantId);
+      router.push(ROUTES.chat(conversation.id));
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.message || err?.message || 'Could not open chat.');
+    }
   };
 
   const handleJoinCall = (booking: BookingDto) => {
@@ -473,6 +484,16 @@ export default function SessionsScreen() {
                           ]}>
                           <Text style={styles.joinButtonText}>Join Video Call</Text>
                         </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => handleMessage(booking.studentId)}
+                          disabled={startConversationMutation.isPending}
+                          style={({ pressed }) => [
+                            styles.messageButton,
+                            pressed && styles.pressed,
+                          ]}>
+                          <Text style={styles.messageButtonText}>Message</Text>
+                        </Pressable>
                       </View>
                     ) : null}
                   </View>
@@ -564,6 +585,16 @@ export default function SessionsScreen() {
                             pressed && styles.pressed,
                           ]}>
                           <Text style={styles.joinButtonText}>Join Video Call</Text>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => handleMessage(booking.mentorId)}
+                          disabled={startConversationMutation.isPending}
+                          style={({ pressed }) => [
+                            styles.messageButton,
+                            pressed && styles.pressed,
+                          ]}>
+                          <Text style={styles.messageButtonText}>Message</Text>
                         </Pressable>
                       </View>
                     ) : booking.status === 'PENDING' ? (
@@ -920,6 +951,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#3B5DF6',
+  },
+  messageButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EEF2FF',
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+  },
+  messageButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#3B5DF6',
   },
   joinButtonText: {
     fontSize: 14,

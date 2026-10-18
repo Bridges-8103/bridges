@@ -1,12 +1,20 @@
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import DashboardFooter from '@/components/layout/DashboardFooter';
+import { getAdminAccess } from '@/lib/adminAuth';
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const access = await getAdminAccess();
+
+  // Non-admins only see the access-denied screen, never the portal chrome or data
+  if (!access.isAdmin) {
+    return <div className="min-h-screen bg-gray-50 p-8">{children}</div>;
+  }
+
   return (
     <div className="min-h-screen flex bg-gray-50">
       {/* Sidebar Navigation */}

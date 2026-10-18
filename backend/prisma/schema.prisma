@@ -48,6 +48,11 @@ model User {
   // Push notification device tokens
   pushTokens      PushToken[]      @relation("UserPushTokens")
 
+  // Chat between mentors and students
+  mentorConversations  Conversation[] @relation("MentorConversations")
+  studentConversations Conversation[] @relation("StudentConversations")
+  sentMessages         Message[]      @relation("SentMessages")
+
   @@index([role])
   @@index([verificationStatus])
 }
@@ -245,4 +250,41 @@ model PushToken {
   @@index([userId])
   @@index([token])
   @@index([isActive])
+}
+
+// ==========================================
+// MESSAGING (mentor <-> student chat)
+// ==========================================
+
+model Conversation {
+  id                Int       @id @default(autoincrement())
+  mentorId          Int
+  studentId         Int
+  lastMessageAt     DateTime?
+  mentorLastReadAt  DateTime?
+  studentLastReadAt DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  mentor            User      @relation("MentorConversations", fields: [mentorId], references: [id], onDelete: Cascade)
+  student           User      @relation("StudentConversations", fields: [studentId], references: [id], onDelete: Cascade)
+  messages          Message[]
+
+  @@unique([mentorId, studentId])
+  @@index([mentorId, lastMessageAt])
+  @@index([studentId, lastMessageAt])
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  conversationId Int
+  senderId       Int
+  body           String
+  createdAt      DateTime @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, id])
 }

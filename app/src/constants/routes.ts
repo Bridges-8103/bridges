@@ -15,13 +15,15 @@ export const ROUTES = {
   mentorBook: (id: string | number) => `/mentor/${id}/book` as `/mentor/[id]/book`,
   mentorConfirmBooking: (id: string | number) =>
     `/mentor/${id}/confirm-booking` as `/mentor/[id]/confirm-booking`,
+  chat: (conversationId: string | number) => `/chat/${conversationId}` as `/chat/[id]`,
 } as const;
 
 export type RoutePath =
   | Exclude<(typeof ROUTES)[keyof typeof ROUTES], Function>
   | `/mentor/${string}`
   | `/mentor/${string}/book`
-  | `/mentor/${string}/confirm-booking`;
+  | `/mentor/${string}/confirm-booking`
+  | `/chat/${string}`;
 
 /**
  * Route segments corresponding to top-level route folders/files.
@@ -42,6 +44,7 @@ export const ROUTE_SEGMENTS = {
   MENTOR_DETAIL: 'mentor/[id]',
   MENTOR_BOOK: 'mentor/[id]/book',
   MENTOR_CONFIRM: 'mentor/[id]/confirm-booking',
+  CHAT: 'chat/[id]',
 } as const;
 
 export type RouteSegment = (typeof ROUTE_SEGMENTS)[keyof typeof ROUTE_SEGMENTS];
@@ -76,6 +79,7 @@ export const PROTECTED_ROUTE_SEGMENTS: readonly RouteSegment[] = [
   ROUTE_SEGMENTS.MENTOR_DETAIL,
   ROUTE_SEGMENTS.MENTOR_BOOK,
   ROUTE_SEGMENTS.MENTOR_CONFIRM,
+  ROUTE_SEGMENTS.CHAT,
 ] as const;
 
 /**
@@ -95,6 +99,7 @@ export const ROUTE_ACCESS_MAP: Record<RouteSegment, RouteAccessType> = {
   [ROUTE_SEGMENTS.MENTOR_DETAIL]: 'protected',
   [ROUTE_SEGMENTS.MENTOR_BOOK]: 'protected',
   [ROUTE_SEGMENTS.MENTOR_CONFIRM]: 'protected',
+  [ROUTE_SEGMENTS.CHAT]: 'protected',
 };
 
 /**

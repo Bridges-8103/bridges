@@ -20,6 +20,15 @@ import { resolveClerkUser } from "@/lib/clerkUser";
 
 export class SessionsService {
   /**
+   * Blocks API access for accounts an admin has suspended.
+   */
+  private static assertNotSuspended(user: { isSuspended: boolean }) {
+    if (user.isSuspended) {
+      throw new ForbiddenError("Your account has been suspended. Please contact support.");
+    }
+  }
+
+  /**
    * Resolves the authenticated user (Clerk or local) to a Prisma User record.
    */
   static async resolveDbUser(authUser: AuthUser) {
@@ -52,6 +61,7 @@ export class SessionsService {
         console.log(
           `[SessionsService.resolveDbUser] Found user by email (${email}): id=${user.id}, role=${user.role}`
         );
+        this.assertNotSuspended(user);
         return user;
       }
     }
@@ -65,6 +75,7 @@ export class SessionsService {
         console.log(
           `[SessionsService.resolveDbUser] Found user by numId (${numId}): id=${user.id}, role=${user.role}`
         );
+        this.assertNotSuspended(user);
         return user;
       }
     }
