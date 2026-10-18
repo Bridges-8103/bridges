@@ -196,7 +196,7 @@ export default function SignUpScreen() {
               {/* Heading */}
               <View style={styles.header}>
                 <Text style={styles.title}>Create account</Text>
-                <Text style={styles.subtitle}>Join thousands of students and mentors on Bridges.</Text>
+                <Text style={styles.subtitle}>Join Bridges to connect with mentors and peers.</Text>
               </View>
 
               {/* Form Fields */}
@@ -215,11 +215,11 @@ export default function SignUpScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>University email</Text>
+                  <Text style={styles.label}>Email address</Text>
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
-                    placeholder="you@university.edu"
+                    placeholder="you@example.com"
                     placeholderTextColor="#9CA3AF"
                     autoCapitalize="none"
                     keyboardType="email-address"
@@ -305,9 +305,9 @@ export default function SignUpScreen() {
                   title="Student"
                   description="I'm looking for guidance, career advice, and connections with industry professionals."
                   perks={[
-                    'Browse 200+ verified mentors',
+                    'Browse mentors across diverse fields',
                     'Book 1-on-1 sessions',
-                    'Get personalised career guidance',
+                    'Get guidance tailored to your goals',
                   ]}
                   color="#4A6CF7"
                   bg="#EEF3FF"
@@ -323,8 +323,8 @@ export default function SignUpScreen() {
                   description="I want to give back by sharing my experience and helping the next generation."
                   perks={[
                     'Set your own availability',
-                    'Help students at your alma mater',
-                    'Build your personal brand',
+                    'Share insights and practical advice',
+                    'Expand your professional network',
                   ]}
                   color="#7C3AED"
                   bg="#F3EEFF"

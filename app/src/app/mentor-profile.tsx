@@ -338,8 +338,8 @@ function AdaptiveProfileForm({
           <ThemedText style={{ color: theme.mutedText }}>
             {isNew
               ? role === 'MENTOR'
-                ? 'Share your experience to help students find and connect with you.'
-                : 'Help us match you with the right industry mentors and peers.'
+                ? 'Share your experience to help mentees find and connect with you.'
+                : 'Help us match you with the right mentors and peers.'
               : 'Keep your information up to date for better mentorship matches.'}
           </ThemedText>
         </View>
@@ -394,7 +394,7 @@ function AdaptiveProfileForm({
                   ]}>
                   Mentor
                 </Text>
-                <Text style={styles.roleOptionSub}>Sharing experience & guiding students</Text>
+                <Text style={styles.roleOptionSub}>Sharing experience & guiding mentees</Text>
               </View>
               {role === 'MENTOR' && (
                 <View style={[styles.roleOptionCheck, { backgroundColor: '#7C3AED' }]}>
@@ -423,8 +423,8 @@ function AdaptiveProfileForm({
             onChangeText={setBio}
             placeholder={
               role === 'MENTOR'
-                ? 'Share your experience, leadership philosophy, or advice…'
-                : 'Share your career ambitions, projects, and what you are looking for…'
+                ? 'Share your background, expertise, and what you can help with…'
+                : 'Share your background, interests, and what you hope to learn…'
             }
             maxLength={BIO_MAX_LENGTH}
           />
@@ -439,12 +439,12 @@ function AdaptiveProfileForm({
         {/* STUDENT SECTION - ONLY VISIBLE TO STUDENTS */}
         {role === 'STUDENT' && (
           <>
-            <SectionCard title="Academic Background">
+            <SectionCard title="Education Background">
               <LabeledInput
-                label="University"
+                label="Institution / University"
                 value={university}
                 onChangeText={setUniversity}
-                placeholder="University name"
+                placeholder="e.g. University, College, or School"
               />
               <View style={styles.row}>
                 <SelectField
@@ -466,7 +466,7 @@ function AdaptiveProfileForm({
                 label="Career Goals"
                 value={careerGoals}
                 onChangeText={setCareerGoals}
-                placeholder="e.g. Software Engineer, AI Researcher"
+                placeholder="e.g. Software Engineer, Product Designer"
               />
             </SectionCard>
 
@@ -482,7 +482,7 @@ function AdaptiveProfileForm({
 
             <CompactTagCard
               title="Interests"
-              subtitle="Fields and research topics you want to explore"
+              subtitle="Fields and topics you want to explore"
               selectedTags={currentInterests}
               field="interests"
               onRemoveTag={handleRemoveInterest}
@@ -531,7 +531,7 @@ function AdaptiveProfileForm({
 
             <CompactTagCard
               title="Mentorship Expertise"
-              subtitle="Topics you can guide students on"
+              subtitle="Topics you can guide mentees on"
               selectedTags={currentExpertise}
               field="expertise"
               onRemoveTag={handleRemoveExpertise}

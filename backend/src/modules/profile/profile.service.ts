@@ -4,6 +4,7 @@ import type {
   Profile,
 } from "./profile.types";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { NotFoundError } from "@/lib/errors";
 import { type AuthUser } from "@/lib/auth";
 import { resolveClerkUser } from "@/lib/clerkUser";
@@ -373,5 +374,63 @@ export class ProfileService {
 
     await prisma.user.delete({ where: { id: numId } });
     return true;
+  }
+
+  /**
+   * Search and list students for peer discovery and networking.
+   */
+  static async getStudents(query: { search?: string; page?: number; limit?: number }) {
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const limit = query.limit && query.limit > 0 ? query.limit : 20;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.UserWhereInput = {
+      role: "STUDENT",
+      isSuspended: false,
+    };
+
+    if (query.search?.trim()) {
+      const s = query.search.trim();
+      where.OR = [
+        { name: { contains: s, mode: "insensitive" } },
+        { studentDetail: { university: { contains: s, mode: "insensitive" } } },
+        { studentDetail: { degree: { contains: s, mode: "insensitive" } } },
+        { studentDetail: { fieldOfStudy: { contains: s, mode: "insensitive" } } },
+      ];
+    }
+
+    const [total, students] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { name: "asc" },
+        include: { studentDetail: true },
+      }),
+    ]);
+
+    const items = students.map((u) => ({
+      id: String(u.id),
+      userId: String(u.id),
+      name: u.name,
+      email: u.email,
+      avatarUrl: u.avatarUrl,
+      bio: u.bio,
+      university: u.studentDetail?.university || null,
+      degree: u.studentDetail?.degree || null,
+      fieldOfStudy: u.studentDetail?.fieldOfStudy || null,
+      yearOfStudy: u.studentDetail?.yearOfStudy || null,
+      interests: u.studentDetail?.interests || [],
+      skills: u.studentDetail?.skills || [],
+    }));
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+    };
   }
 }

@@ -108,7 +108,7 @@ export default function BookMentorSessionsScreen() {
           <View style={styles.headerTitleWrap}>
             <Text style={styles.title}>Booking Unavailable</Text>
             <Text numberOfLines={1} style={styles.subtitle}>
-              Reserved for students
+              Reserved for mentees
             </Text>
           </View>
           <View style={{ width: 40 }} />
@@ -122,9 +122,9 @@ export default function BookMentorSessionsScreen() {
               tintColor="#7C3AED"
             />
           </View>
-          <Text style={styles.mentorBlockedTitle}>Booking Reserved for Students</Text>
+          <Text style={styles.mentorBlockedTitle}>Booking Available for Mentees</Text>
           <Text style={styles.mentorBlockedText}>
-            You are signed in as a Mentor. Mentors can view peer profiles and receive mentorship requests from students, but cannot book sessions.
+            You are signed in as a mentor. Mentors can view peer profiles and receive session requests, but session booking is reserved for mentee accounts.
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -315,7 +315,7 @@ export default function BookMentorSessionsScreen() {
               : `${selectedCount} ${selectedCount === 1 ? 'session' : 'sessions'} (${selectedCount * 30} min)`}
           </Text>
           <Text style={styles.selectedSubText}>
-            {selectedCount > 0 ? 'Multiple sessions allowed' : 'Exclusive 1-on-1 slot'}
+            {selectedCount > 0 ? 'Multiple sessions allowed' : '1-on-1 session'}
           </Text>
         </View>
 

@@ -238,10 +238,10 @@ export class MentorsService {
           matchReasons.push(`${matched.slice(0, 2).join(", ")} expertise`);
         }
         if (mentorDto.company) {
-          matchReasons.push(`${mentorDto.company} faculty`);
+          matchReasons.push(`${mentorDto.company}`);
         }
         if (matchReasons.length === 0) {
-          matchReasons.push("High student recommendation");
+          matchReasons.push("Highly recommended");
         }
 
         return {
@@ -280,7 +280,7 @@ export class MentorsService {
         scoredMatches.push({
           mentor: dto,
           score: 80,
-          matchReasons: ["Recommended academic mentor"],
+          matchReasons: ["Recommended mentor"],
           matchingInterests: [],
         });
       }
@@ -303,7 +303,7 @@ export class MentorsService {
       return {
         mentor: mentorDto,
         score: 85,
-        matchReasons: ["Featured university mentor", mentorDto.company || "Adelaide University"],
+        matchReasons: ["Featured mentor", mentorDto.company || "Verified mentor"],
         matchingInterests: [],
       };
     });

@@ -97,7 +97,7 @@ export default function SessionsScreen() {
   const handleConfirmSession = (booking: BookingDto) => {
     Alert.alert(
       'Accept Session Request',
-      `Accept 30-min session with ${booking.student?.name || 'student'} for ${
+      `Accept 30-min session with ${booking.student?.name || 'mentee'} for ${
         formatBookingTime(booking.slot.startTime, booking.slot.endTime).dateStr
       }?`,
       [
@@ -111,7 +111,7 @@ export default function SessionsScreen() {
                 bookingId: booking.id,
                 input: { status: 'CONFIRMED' },
               });
-              Alert.alert('Session Confirmed! ✅', 'The student has been notified.');
+              Alert.alert('Session Confirmed! ✅', 'The mentee has been notified.');
             } catch (err: any) {
               Alert.alert('Error', err?.message || 'Could not confirm session.');
             }
@@ -124,7 +124,7 @@ export default function SessionsScreen() {
   const handleDeclineSession = (booking: BookingDto) => {
     Alert.alert(
       'Decline Session Request',
-      `Are you sure you want to decline this session request? The timeslot will automatically be reopened for other students.`,
+      `Are you sure you want to decline this session request? The timeslot will automatically be reopened for other mentees.`,
       [
         { text: 'Keep Session', style: 'cancel' },
         {
@@ -235,7 +235,7 @@ export default function SessionsScreen() {
         <View style={styles.header}>
           <View style={styles.headerTitleRow}>
             <Text style={styles.title}>
-              {isMentor ? 'Student Mentorship Sessions' : 'My Booked Sessions'}
+              {isMentor ? 'Mentorship Sessions' : 'My Booked Sessions'}
             </Text>
             <View
               style={[
@@ -247,13 +247,13 @@ export default function SessionsScreen() {
                   styles.roleBadgeText,
                   isMentor ? styles.roleBadgeTextMentor : styles.roleBadgeTextStudent,
                 ]}>
-                {isMentor ? '🌟 Mentor Mode' : '🎓 Student Mode'}
+                {isMentor ? 'Mentor' : 'Mentee'}
               </Text>
             </View>
           </View>
           <Text style={styles.subtitle}>
             {isMentor
-              ? 'Review and manage your incoming student mentorship bookings.'
+              ? 'Review and manage your incoming mentorship bookings.'
               : 'Track your booked mentorship sessions and approvals.'}
           </Text>
         </View>
@@ -278,7 +278,7 @@ export default function SessionsScreen() {
             <View style={styles.mentorBannerTextWrap}>
               <Text style={styles.mentorBannerTitle}>Manage Your Available Slots</Text>
               <Text style={styles.mentorBannerSubtitle}>
-                Tick open 30-min windows for students to book
+                Open 30-min timeslots for mentees to book
               </Text>
             </View>
             <SymbolView
@@ -382,8 +382,8 @@ export default function SessionsScreen() {
               </Text>
               <Text style={styles.emptySubtitle}>
                 {mentorTab === 'pending'
-                  ? 'When students book your available slots, their session requests will appear here for you to accept or decline.'
-                  : 'Configure more available slots to allow students to book mentorship sessions.'}
+                  ? 'When mentees book your available slots, their session requests will appear here for you to accept or decline.'
+                  : 'Configure more available slots to allow mentees to book sessions.'}
               </Text>
               <Pressable
                 accessibilityRole="button"
@@ -412,16 +412,16 @@ export default function SessionsScreen() {
                       ) : (
                         <View style={styles.avatarFallback}>
                           <Text style={styles.avatarInitial}>
-                            {booking.student?.name?.charAt(0).toUpperCase() || 'S'}
+                            {booking.student?.name?.charAt(0).toUpperCase() || 'M'}
                           </Text>
                         </View>
                       )}
                       <View style={styles.userMeta}>
                         <Text style={styles.userNameText}>
-                          {booking.student?.name || 'Student'}
+                          {booking.student?.name || 'Mentee'}
                         </Text>
                         <Text numberOfLines={1} style={styles.userSubText}>
-                          {booking.student?.subtitle || 'Student Mentee'}
+                          {booking.student?.subtitle || 'Mentee'}
                         </Text>
                       </View>
                       {renderStatusBadge(booking.status)}
@@ -512,7 +512,7 @@ export default function SessionsScreen() {
               />
               <Text style={styles.emptyTitle}>No sessions booked yet</Text>
               <Text style={styles.emptySubtitle}>
-                Explore mentors, choose an available 30-min timeslot, and book your session!
+                Explore mentors and choose an available 30-min timeslot to book.
               </Text>
               <Pressable
                 accessibilityRole="button"

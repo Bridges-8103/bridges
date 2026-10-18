@@ -20,6 +20,7 @@ import { useRole } from '@/hooks/use-role';
 import { useMentorDetailQuery } from '@/services/mentors/queries';
 import { useProfileQuery } from '@/services/profile/queries';
 import { ROUTES } from '@/constants/routes';
+import { ConnectionButton } from '@/components/common/connection-button';
 
 export default function MentorDetailScreen() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function MentorDetailScreen() {
     if (isMentor) {
       Alert.alert(
         'Booking Unavailable',
-        'As a mentor, you can view peer profiles and network with colleagues, but session bookings are reserved for students.'
+        'As a mentor, you can view peer profiles and network, but session bookings are reserved for mentees.'
       );
       return;
     }
@@ -214,7 +215,7 @@ export default function MentorDetailScreen() {
             </View>
             <View style={styles.statPill}>
               <Text style={styles.statIcon}>🎓</Text>
-              <Text style={styles.statText}>Verified Faculty</Text>
+              <Text style={styles.statText}>Verified Mentor</Text>
             </View>
             {matchingTags.length > 0 && (
               <View style={[styles.statPill, styles.statMatchPill]}>
@@ -229,7 +230,7 @@ export default function MentorDetailScreen() {
         {/* About Section */}
         {mentor.bio ? (
           <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Text style={styles.sectionHeading}>About & Research</Text>
+            <Text style={styles.sectionHeading}>About</Text>
             <Text style={styles.bioText}>{mentor.bio}</Text>
           </View>
         ) : null}
@@ -363,10 +364,16 @@ export default function MentorDetailScreen() {
                 tintColor="#7C3AED"
               />
               <Text style={styles.mentorNoticeText}>
-                Mentorship booking is reserved for student accounts.
+                Session booking is available for mentee accounts.
               </Text>
             </View>
             <View style={styles.mentorActionButtonsRow}>
+              <ConnectionButton
+                targetUserId={mentor.id}
+                targetUserName={mentor.name}
+                variant="primary"
+                style={{ flex: 1.2 }}
+              />
               {(mentor.contactEmail || mentor.email) && (
                 <Pressable
                   accessibilityRole="button"
@@ -380,7 +387,7 @@ export default function MentorDetailScreen() {
                     size={16}
                     tintColor="#3B5DF6"
                   />
-                  <Text style={styles.mentorEmailButtonText}>Email Colleague</Text>
+                  <Text style={styles.mentorEmailButtonText}>Email</Text>
                 </Pressable>
               )}
               <Pressable
@@ -395,29 +402,36 @@ export default function MentorDetailScreen() {
                   size={16}
                   tintColor="#4B5563"
                 />
-                <Text style={styles.mentorShareButtonText}>Share Profile</Text>
+                <Text style={styles.mentorShareButtonText}>Share</Text>
               </Pressable>
             </View>
           </View>
         ) : (
-          <Pressable
-            accessibilityRole="button"
-            onPress={handleBookSession}
-            style={({ pressed }) => [
-              styles.bookButton,
-              pressed && styles.pressed,
-            ]}>
-            <SymbolView
-              name={{
-                ios: 'calendar.badge.plus',
-                android: 'event',
-                web: 'event',
-              }}
-              size={18}
-              tintColor="#FFFFFF"
+          <View style={styles.studentActionRow}>
+            <ConnectionButton
+              targetUserId={mentor.id}
+              targetUserName={mentor.name}
+              variant="bottom-bar"
             />
-            <Text style={styles.bookButtonText}>Book Mentorship Session</Text>
-          </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleBookSession}
+              style={({ pressed }) => [
+                styles.bookButton,
+                pressed && styles.pressed,
+              ]}>
+              <SymbolView
+                name={{
+                  ios: 'calendar.badge.plus',
+                  android: 'event',
+                  web: 'event',
+                }}
+                size={18}
+                tintColor="#FFFFFF"
+              />
+              <Text style={styles.bookButtonText}>Book Session</Text>
+            </Pressable>
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -722,7 +736,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
+  studentActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   bookButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

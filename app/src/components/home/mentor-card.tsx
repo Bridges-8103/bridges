@@ -62,7 +62,7 @@ export function MentorCard({ mentor, score, matchReason, onPress }: MentorCardPr
         {mentor.name}
       </Text>
       <Text style={styles.jobTitle} numberOfLines={1}>
-        {mentor.jobTitle || 'Faculty Researcher'}
+        {mentor.jobTitle || 'Mentor'}
       </Text>
 
       {/* College / Department */}
@@ -84,7 +84,7 @@ export function MentorCard({ mentor, score, matchReason, onPress }: MentorCardPr
         {expertiseList.length === 0 && (
           <View style={[styles.tag, { backgroundColor: '#F3F4F6' }]}>
             <Text style={[styles.tagText, { color: '#6B7280' }]} numberOfLines={1}>
-              Adelaide Mentor
+              Mentor
             </Text>
           </View>
         )}

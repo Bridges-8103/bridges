@@ -18,7 +18,10 @@ import { useRole } from '@/hooks/use-role';
 import { useUpdateProfileMutation } from '@/services/profile/mutations';
 import { useMentorsQuery, useSuggestedMentorsQuery } from '@/services/mentors/queries';
 import { useTaxonomyQuery } from '@/services/taxonomy/queries';
+import { useStudentsQuery } from '@/services/students/queries';
+import { ConnectionButton } from '@/components/common/connection-button';
 import type { MentorProfile } from '@/services/mentors/types';
+import type { StudentProfile } from '@/services/students/types';
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -42,6 +45,7 @@ export default function ExploreScreen() {
     }
   };
 
+  const [exploreTab, setExploreTab] = useState<'mentors' | 'students'>('mentors');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -55,21 +59,39 @@ export default function ExploreScreen() {
     data: filteredResult,
     isLoading: isFilteredLoading,
   } = useMentorsQuery(
-    isFiltering
+    isFiltering && exploreTab === 'mentors'
       ? {
           category: selectedCategory ?? undefined,
           search: searchQuery.trim() || undefined,
           limit: 30,
         }
       : undefined,
-    { enabled: isFiltering }
+    { enabled: isFiltering && exploreTab === 'mentors' }
   );
 
   // 2. Default state: interest-ranked mentor suggestions from database (or all mentors for mentors)
   const {
     data: suggestedMatches = [],
     isLoading: isSuggestionsLoading,
-  } = useSuggestedMentorsQuery(isStudent ? selectedInterests : [], 30, { enabled: !isFiltering });
+  } = useSuggestedMentorsQuery(
+    isStudent ? selectedInterests : [],
+    30,
+    { enabled: !isFiltering && exploreTab === 'mentors' }
+  );
+
+  // 3. Students & Peers query
+  const {
+    data: studentsResult,
+    isLoading: isStudentsLoading,
+  } = useStudentsQuery(
+    exploreTab === 'students'
+      ? {
+          search: searchQuery.trim() || undefined,
+          limit: 30,
+        }
+      : undefined,
+    { enabled: exploreTab === 'students' }
+  );
 
   const handleBook = (mentor: MentorProfile) => {
     if (isMentor) {
@@ -95,7 +117,7 @@ export default function ExploreScreen() {
         <View style={styles.header}>
           <View style={styles.headerTitleRow}>
             <Text style={styles.title}>
-              {isMentor ? 'Mentor & Faculty Directory' : 'Find Your Mentor'}
+              {isMentor ? 'Mentor Directory' : 'Find a Mentor'}
             </Text>
             <View
               style={[
@@ -107,14 +129,14 @@ export default function ExploreScreen() {
                   styles.roleBadgeText,
                   isMentor ? styles.roleBadgeTextMentor : styles.roleBadgeTextStudent,
                 ]}>
-                {isMentor ? '🌟 Colleague Network' : '🎓 Find Mentors'}
+                {isMentor ? 'Peer Network' : 'Mentors'}
               </Text>
             </View>
           </View>
           <Text style={styles.subtitle}>
             {isMentor
-              ? 'Search university faculty, researchers, and fellow mentors across departments.'
-              : 'Explore university researchers and faculty mentors matched to your academic goals.'}
+              ? 'Connect with mentors and peers across industries and fields.'
+              : 'Discover mentors matched to your interests and career goals.'}
           </Text>
         </View>
 
@@ -127,10 +149,45 @@ export default function ExploreScreen() {
               tintColor="#7C3AED"
             />
             <Text style={styles.mentorBannerText}>
-              You can search and view peer profiles. Mentorship session booking is reserved for student accounts.
+              Browse and connect with peers. 1-on-1 session booking is available for mentee accounts.
             </Text>
           </View>
         )}
+
+        {/* Network Scope Switcher */}
+        <View style={styles.segmentContainer}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setExploreTab('mentors')}
+            style={[
+              styles.segmentBtn,
+              exploreTab === 'mentors' && styles.segmentBtnActive,
+            ]}>
+            <Text
+              style={[
+                styles.segmentBtnText,
+                exploreTab === 'mentors' && styles.segmentBtnTextActive,
+              ]}>
+              Mentors
+            </Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setExploreTab('students')}
+            style={[
+              styles.segmentBtn,
+              exploreTab === 'students' && styles.segmentBtnActive,
+            ]}>
+            <Text
+              style={[
+                styles.segmentBtnText,
+                exploreTab === 'students' && styles.segmentBtnTextActive,
+              ]}>
+              Peers & Mentees
+            </Text>
+          </Pressable>
+        </View>
 
         {/* Search Bar */}
         <View style={styles.searchBar}>
@@ -143,9 +200,11 @@ export default function ExploreScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder={
-              isMentor
-                ? 'Search colleague by name, department, or field…'
-                : 'Search by mentor name, role, department, or skill…'
+              exploreTab === 'students'
+                ? 'Search by name, background, or institution…'
+                : isMentor
+                ? 'Search by name, organization, or field…'
+                : 'Search by mentor name, role, company, or skill…'
             }
             placeholderTextColor="#9CA3AF"
             style={styles.searchInput}
@@ -163,67 +222,69 @@ export default function ExploreScreen() {
           )}
         </View>
 
-        {/* Category Horizontal Pills */}
-        <View style={styles.categorySection}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryTabsScroll}>
-            <Pressable
-              onPress={() => setSelectedCategory(null)}
-              style={[
-                styles.categoryTab,
-                selectedCategory === null && styles.categoryTabActive,
-              ]}>
-              <Text
+        {/* Category Horizontal Pills (Only for Mentors directory) */}
+        {exploreTab === 'mentors' && (
+          <View style={styles.categorySection}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryTabsScroll}>
+              <Pressable
+                onPress={() => setSelectedCategory(null)}
                 style={[
-                  styles.categoryTabText,
-                  selectedCategory === null && styles.categoryTabTextActive,
+                  styles.categoryTab,
+                  selectedCategory === null && styles.categoryTabActive,
                 ]}>
-                All Fields
-              </Text>
-            </Pressable>
-
-            {taxonomyCategories.map((cat) => {
-              const isSelected = selectedCategory === cat.slug;
-              return (
-                <Pressable
-                  key={cat.slug}
-                  onPress={() => setSelectedCategory(isSelected ? null : cat.slug)}
+                <Text
                   style={[
-                    styles.categoryTab,
-                    isSelected && styles.categoryTabActive,
+                    styles.categoryTabText,
+                    selectedCategory === null && styles.categoryTabTextActive,
                   ]}>
-                  <Text
-                    style={[
-                      styles.categoryTabText,
-                      isSelected && styles.categoryTabTextActive,
-                    ]}>
-                    {cat.name}
-                  </Text>
-                  {cat.mentorCount > 0 && (
-                    <View
-                      style={[
-                        styles.categoryCountBadge,
-                        isSelected && styles.categoryCountBadgeActive,
-                      ]}>
-                      <Text
-                        style={[
-                          styles.categoryCountText,
-                          isSelected && styles.categoryCountTextActive,
-                        ]}>
-                        {cat.mentorCount}
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
+                  All Fields
+                </Text>
+              </Pressable>
 
-        {/* Categorized Interests Selector (Students only) */}
-        {isStudent && !isFiltering && (
+              {taxonomyCategories.map((cat) => {
+                const isSelected = selectedCategory === cat.slug;
+                return (
+                  <Pressable
+                    key={cat.slug}
+                    onPress={() => setSelectedCategory(isSelected ? null : cat.slug)}
+                    style={[
+                      styles.categoryTab,
+                      isSelected && styles.categoryTabActive,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.categoryTabText,
+                        isSelected && styles.categoryTabTextActive,
+                      ]}>
+                      {cat.name}
+                    </Text>
+                    {cat.mentorCount > 0 && (
+                      <View
+                        style={[
+                          styles.categoryCountBadge,
+                          isSelected && styles.categoryCountBadgeActive,
+                        ]}>
+                        <Text
+                          style={[
+                            styles.categoryCountText,
+                            isSelected && styles.categoryCountTextActive,
+                          ]}>
+                          {cat.mentorCount}
+                        </Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Categorized Interests Selector (Students only in mentors tab) */}
+        {exploreTab === 'mentors' && isStudent && !isFiltering && (
           <CompactTagCard
             title="Your Interests"
             subtitle="Match with mentors specializing in these topics"
@@ -236,77 +297,108 @@ export default function ExploreScreen() {
         )}
 
         {/* Results Section */}
-        <View style={styles.section}>
-          <View style={styles.resultsHeader}>
-            <Text style={styles.sectionLabel}>
-              {isFiltering
-                ? 'Search Results'
-                : isMentor
-                ? 'Faculty & Mentors'
-                : 'Recommended Mentors'}
-            </Text>
-            <Text style={styles.matchCountBadge}>
-              {isFiltering
-                ? `${filteredResult?.total ?? 0} Mentors`
-                : `${suggestedMatches.length} Mentors`}
-            </Text>
-          </View>
-
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#3B5DF6" />
-              <Text style={styles.loadingText}>Loading mentors from database…</Text>
+        {exploreTab === 'students' ? (
+          <View style={styles.section}>
+            <View style={styles.resultsHeader}>
+              <Text style={styles.sectionLabel}>Peers & Mentees</Text>
+              <Text style={styles.matchCountBadge}>
+                {`${studentsResult?.total ?? 0} Members`}
+              </Text>
             </View>
-          ) : isFiltering ? (
-            // Filtered mentors list
-            filteredResult && filteredResult.items.length > 0 ? (
+
+            {isStudentsLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#3B5DF6" />
+                <Text style={styles.loadingText}>Loading members…</Text>
+              </View>
+            ) : studentsResult && studentsResult.items.length > 0 ? (
               <View style={styles.matchesList}>
-                {filteredResult.items.map((mentor) => (
-                  <MentorListItem
-                    key={mentor.id}
-                    mentor={mentor}
-                    isMentorUser={isMentor}
-                    onPress={() => handleViewMentor(mentor.id)}
-                    onBook={() => handleBook(mentor)}
-                  />
+                {studentsResult.items.map((student) => (
+                  <StudentListItem key={student.id} student={student} />
                 ))}
               </View>
             ) : (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyTitle}>No mentors found</Text>
+                <Text style={styles.emptyTitle}>No members found</Text>
                 <Text style={styles.emptySubtitle}>
-                  Try clearing your search query or choosing a different field category.
+                  Try clearing your search query or check back later.
                 </Text>
               </View>
-            )
-          ) : (
-            // Suggested matches list
-            suggestedMatches.length > 0 ? (
-              <View style={styles.matchesList}>
-                {suggestedMatches.map((match) => (
-                  <MentorListItem
-                    key={match.mentor.id}
-                    mentor={match.mentor}
-                    score={isStudent ? match.score : undefined}
-                    reasons={isStudent ? match.matchReasons : undefined}
-                    isMentorUser={isMentor}
-                    onPress={() => handleViewMentor(match.mentor.id)}
-                    onBook={() => handleBook(match.mentor)}
-                  />
-                ))}
+            )}
+          </View>
+        ) : (
+          <View style={styles.section}>
+            <View style={styles.resultsHeader}>
+              <Text style={styles.sectionLabel}>
+                {isFiltering
+                  ? 'Search Results'
+                  : isMentor
+                  ? 'Mentors'
+                  : 'Recommended Mentors'}
+              </Text>
+              <Text style={styles.matchCountBadge}>
+                {isFiltering
+                  ? `${filteredResult?.total ?? 0} Mentors`
+                  : `${suggestedMatches.length} Mentors`}
+              </Text>
+            </View>
+
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#3B5DF6" />
+                <Text style={styles.loadingText}>Loading mentors…</Text>
               </View>
+            ) : isFiltering ? (
+              // Filtered mentors list
+              filteredResult && filteredResult.items.length > 0 ? (
+                <View style={styles.matchesList}>
+                  {filteredResult.items.map((mentor) => (
+                    <MentorListItem
+                      key={mentor.id}
+                      mentor={mentor}
+                      isMentorUser={isMentor}
+                      onPress={() => handleViewMentor(mentor.id)}
+                      onBook={() => handleBook(mentor)}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyTitle}>No mentors found</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Try clearing your search query or choosing a different field category.
+                  </Text>
+                </View>
+              )
             ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyTitle}>No mentors found</Text>
-                <Text style={styles.emptySubtitle}>
-                  {isStudent
-                    ? 'Add interests above to unlock personalized recommendations.'
-                    : 'Check back later as new faculty join the platform.'}
-                </Text>
-              </View>
-            )
-          )}
-        </View>
+              // Suggested matches list
+              suggestedMatches.length > 0 ? (
+                <View style={styles.matchesList}>
+                  {suggestedMatches.map((match) => (
+                    <MentorListItem
+                      key={match.mentor.id}
+                      mentor={match.mentor}
+                      score={isStudent ? match.score : undefined}
+                      reasons={isStudent ? match.matchReasons : undefined}
+                      isMentorUser={isMentor}
+                      onPress={() => handleViewMentor(match.mentor.id)}
+                      onBook={() => handleBook(match.mentor)}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyTitle}>No mentors found</Text>
+                  <Text style={styles.emptySubtitle}>
+                    {isStudent
+                      ? 'Add interests above to unlock personalized recommendations.'
+                      : 'Check back later as new mentors join the platform.'}
+                  </Text>
+                </View>
+              )
+            )}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -362,7 +454,7 @@ function MentorListItem({
           </View>
 
           <Text style={styles.mentorRole} numberOfLines={1}>
-            {mentor.jobTitle || 'Faculty Researcher'}
+            {mentor.jobTitle || 'Mentor'}
           </Text>
 
           {mentor.company ? (
@@ -401,9 +493,16 @@ function MentorListItem({
         <Pressable
           accessibilityRole="button"
           onPress={onPress}
-          style={[styles.profileBtn, isMentorUser && styles.profileBtnFull]}>
-          <Text style={styles.profileBtnText}>View Profile</Text>
+          style={styles.profileBtn}>
+          <Text style={styles.profileBtnText}>View</Text>
         </Pressable>
+
+        <ConnectionButton
+          targetUserId={mentor.id}
+          targetUserName={mentor.name}
+          variant="secondary"
+          style={{ flex: 1.2 }}
+        />
 
         {/* Booking action only visible to Students */}
         {!isMentorUser && (
@@ -411,11 +510,85 @@ function MentorListItem({
             accessibilityRole="button"
             onPress={onBook}
             style={styles.connectButton}>
-            <Text style={styles.connectButtonText}>Book Session</Text>
+            <Text style={styles.connectButtonText}>Book</Text>
           </Pressable>
         )}
       </View>
     </Pressable>
+  );
+}
+
+function StudentListItem({ student }: { student: StudentProfile }) {
+  const initials = student.name
+    .split(' ')
+    .filter((part) => !part.includes('.'))
+    .slice(0, 2)
+    .map((p) => p.charAt(0))
+    .join('')
+    .toUpperCase();
+
+  const universityDegree = [student.degree || student.fieldOfStudy, student.university]
+    .filter(Boolean)
+    .join(' · ');
+
+  return (
+    <View style={styles.matchCard}>
+      <View style={styles.cardTop}>
+        {student.avatarUrl ? (
+          <Image source={{ uri: student.avatarUrl }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarFallback]}>
+            <Text style={styles.avatarInitial}>{initials || 'ST'}</Text>
+          </View>
+        )}
+
+        <View style={styles.mentorInfo}>
+          <View style={styles.nameRow}>
+            <Text style={styles.mentorName} numberOfLines={1}>
+              {student.name}
+            </Text>
+            {student.yearOfStudy ? (
+              <View style={styles.scoreBadge}>
+                <Text style={styles.scoreText}>Yr {student.yearOfStudy}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {universityDegree ? (
+            <Text style={styles.mentorRole} numberOfLines={1}>
+              🎓 {universityDegree}
+            </Text>
+          ) : null}
+
+          {student.bio ? (
+            <Text style={styles.companyText} numberOfLines={2}>
+              {student.bio}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+
+      {/* Interests / Skills tags */}
+      {student.interests && student.interests.length > 0 ? (
+        <View style={styles.reasonsContainer}>
+          {student.interests.slice(0, 3).map((interest, idx) => (
+            <View key={idx} style={styles.reasonPill}>
+              <Text style={styles.reasonText}>• {interest}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {/* Action Row */}
+      <View style={styles.actionRow}>
+        <ConnectionButton
+          targetUserId={student.id}
+          targetUserName={student.name}
+          variant="primary"
+          style={{ flex: 1 }}
+        />
+      </View>
+    </View>
   );
 }
 
@@ -725,5 +898,36 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'center',
     maxWidth: 280,
+  },
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F8',
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 11,
+  },
+  segmentBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  segmentBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  segmentBtnTextActive: {
+    color: '#111827',
+    fontWeight: '700',
   },
 });
