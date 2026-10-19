@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,17 +13,33 @@ import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/use-auth';
+import { useProfileQuery } from '@/services/profile/queries';
 
 type RoleType = 'STUDENT' | 'MENTOR';
 
 export default function ChooseRoleScreen() {
   const router = useRouter();
   const { user, updateRole, signOut } = useAuth();
+  const { data: profile, isLoading: isProfileLoading } = useProfileQuery();
+
+  useEffect(() => {
+    if (!isProfileLoading && profile) {
+      router.replace(ROUTES.TABS);
+    }
+  }, [isProfileLoading, profile, router]);
 
   const [selectedRole, setSelectedRole] = useState<RoleType>(
     user?.role === 'MENTOR' ? 'MENTOR' : 'STUDENT'
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (isProfileLoading || profile) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color="#3B5DF6" />
+      </SafeAreaView>
+    );
+  }
 
   const handleContinue = async (roleToUse: RoleType = selectedRole) => {
     setIsSubmitting(true);
@@ -83,8 +99,8 @@ export default function ChooseRoleScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Choose your role</Text>
           <Text style={styles.subtitle}>
-            Welcome{user?.name ? `, ${user.name}` : ''}! Tell us how you plan to use Bridges. You can
-            switch roles or adjust your profile details at any time.
+            Welcome{user?.name ? `, ${user.name}` : ''}! Tell us how you plan to use Bridges to set up
+            your profile.
           </Text>
         </View>
 

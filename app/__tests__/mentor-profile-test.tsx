@@ -166,18 +166,11 @@ describe('MentorProfileScreen', () => {
       expect(await screen.findByText('Complete your mentor profile')).toBeOnTheScreen();
     });
 
-    it('swaps the role-specific sections when the role is toggled', async () => {
+    it('does not render role selector controls and preserves locked role', async () => {
       await renderScreen();
       await screen.findByText('Complete your student profile');
 
-      await fireEvent.press(screen.getByText('Mentor'));
-
-      expect(screen.getByText('Complete your mentor profile')).toBeOnTheScreen();
-      expect(screen.getByText('Professional Experience')).toBeOnTheScreen();
-      expect(screen.queryByText('Education Background')).toBeNull();
-
-      await fireEvent.press(screen.getByText('Student'));
-
+      expect(screen.queryByText('Your Role')).toBeNull();
       expect(screen.getByText('Education Background')).toBeOnTheScreen();
       expect(screen.queryByText('Professional Experience')).toBeNull();
     });

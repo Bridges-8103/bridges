@@ -250,35 +250,6 @@ export default function ProfileScreen() {
             </Pressable>
           ) : null}
 
-          {/* Role Switcher */}
-          <Pressable
-            onPress={() => router.push(ROUTES.CHOOSE_ROLE)}
-            style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIconContainer, { backgroundColor: '#F5EEFF' }]}>
-                <SymbolView
-                  name={{
-                    ios: 'arrow.triangle.2.circlepath',
-                    android: 'swap_horiz',
-                    web: 'swap_horiz',
-                  }}
-                  size={18}
-                  tintColor="#7C3AED"
-                />
-              </View>
-              <View>
-                <Text style={styles.menuItemText}>Switch / Change Role</Text>
-                <Text style={styles.menuItemSub}>
-                  Active: {isMentor ? 'Mentor' : 'Mentee'} · Tap to change
-                </Text>
-              </View>
-            </View>
-            <SymbolView
-              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
-              size={14}
-              tintColor="#9CA3AF"
-            />
-          </Pressable>
 
           <Pressable
             onPress={() => router.push(ROUTES.WELCOME)}

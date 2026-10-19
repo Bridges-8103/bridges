@@ -288,7 +288,7 @@ export default function SignUpScreen() {
               <View style={styles.header}>
                 <Text style={styles.title}>I am a…</Text>
                 <Text style={styles.subtitle}>
-                  Choose your role on Bridges. You can change this later.
+                  Choose your role on Bridges.
                 </Text>
               </View>
 
