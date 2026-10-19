@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { setAuthTokenGetter } from '@/services/api';
 import { queryClient } from '@/lib/query-client';
+import { unregisterCurrentPushToken } from '@/hooks/use-push-notifications';
 
 export type AuthUser = {
   id: string;
@@ -120,6 +121,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const handleSignOut = async () => {
+    // 0. Deactivate device push token on backend before tearing down auth session
+    try {
+      await unregisterCurrentPushToken();
+    } catch (err) {
+      console.warn('[auth] Failed to unregister push token on signOut:', err);
+    }
+
     try {
       // 1. Explicitly sign out on Clerk side to terminate active session & clear cookies/storage
       await clerkSignOut();

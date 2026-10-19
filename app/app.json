@@ -1,12 +1,18 @@
 {
   "expo": {
     "name": "Bridges",
-    "slug": "app",
+    "slug": "bridges",
+    "owner": "megatunger",
     "version": "1.0.46",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "app",
     "userInterfaceStyle": "light",
+    "extra": {
+      "eas": {
+        "projectId": "11bc69db-f44f-4611-a65a-d13aece96343"
+      }
+    },
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/icon.png",
@@ -49,7 +55,8 @@
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
-          "color": "#140C59"
+          "color": "#140C59",
+          "enableBackgroundRemoteNotifications": true
         }
       ]
     ],

@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useTheme } from '@/hooks/use-theme';
 import { ROUTES } from '@/constants/routes';
@@ -28,8 +28,12 @@ import {
 export default function ConnectionsScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const params = useLocalSearchParams<{ tab?: 'connections' | 'invitations' }>();
 
-  const [activeTab, setActiveTab] = useState<'connections' | 'invitations'>('connections');
+  const [activeTabOverride, setActiveTabOverride] = useState<'connections' | 'invitations' | null>(null);
+  const activeTab: 'connections' | 'invitations' =
+    activeTabOverride ?? (params.tab === 'invitations' ? 'invitations' : 'connections');
+  const setActiveTab = (tab: 'connections' | 'invitations') => setActiveTabOverride(tab);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Queries

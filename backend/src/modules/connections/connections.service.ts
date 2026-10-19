@@ -9,6 +9,7 @@ import {
 } from "@/lib/errors";
 import { type AuthUser } from "@/lib/auth";
 import { resolveClerkUser } from "@/lib/clerkUser";
+import { NotificationService } from "@/modules/notifications";
 import type {
   ConnectionDto,
   ConnectionListQuery,
@@ -84,6 +85,25 @@ export class ConnectionsService {
     throw new UnauthorizedError(
       `No database user record matches authenticated identity (${authUser.id}). Please register first.`
     );
+  }
+
+  /**
+   * Dispatches push notification asynchronously without failing the calling database operation.
+   */
+  private static sendPushSafely(
+    userId: number,
+    options: {
+      title: string;
+      body: string;
+      data?: Record<string, unknown>;
+    }
+  ): void {
+    NotificationService.sendToUser(userId, options).catch((err) => {
+      console.error(
+        `[ConnectionsService.sendPushSafely] Failed to send push notification to user=${userId}:`,
+        err
+      );
+    });
   }
 
   /**
@@ -260,6 +280,20 @@ export class ConnectionsService {
           },
         });
 
+        // Notify the user who had originally sent the request that it is now connected
+        const otherUserId = existing.initiatorId;
+        const currentUserName =
+          accepted.receiver.id === initiatorId ? accepted.receiver.name : accepted.initiator.name;
+        this.sendPushSafely(otherUserId, {
+          title: "Connection Accepted",
+          body: `${currentUserName} accepted your connection request. You are now connected!`,
+          data: {
+            route: "/connections",
+            type: "CONNECTION_ACCEPTED",
+            connectionId: accepted.id,
+          },
+        });
+
         return this.mapConnectionToDto(accepted, initiatorId);
       }
 
@@ -277,6 +311,20 @@ export class ConnectionsService {
           include: {
             initiator: { include: { studentDetail: true, mentorDetail: true } },
             receiver: { include: { studentDetail: true, mentorDetail: true } },
+          },
+        });
+
+        // Notify recipient about re-opened connection request
+        const noteBody = reopened.note
+          ? `: "${reopened.note.length > 100 ? `${reopened.note.slice(0, 97)}...` : reopened.note}"`
+          : " sent you a connection request.";
+        this.sendPushSafely(receiverId, {
+          title: reopened.initiator.name,
+          body: `${reopened.initiator.name}${noteBody}`,
+          data: {
+            route: "/connections?tab=invitations",
+            type: "CONNECTION_REQUEST",
+            connectionId: reopened.id,
           },
         });
 
@@ -300,6 +348,20 @@ export class ConnectionsService {
       include: {
         initiator: { include: { studentDetail: true, mentorDetail: true } },
         receiver: { include: { studentDetail: true, mentorDetail: true } },
+      },
+    });
+
+    // Notify recipient about new connection request
+    const noteBody = created.note
+      ? `: "${created.note.length > 100 ? `${created.note.slice(0, 97)}...` : created.note}"`
+      : " sent you a connection request.";
+    this.sendPushSafely(receiverId, {
+      title: created.initiator.name,
+      body: `${created.initiator.name}${noteBody}`,
+      data: {
+        route: "/connections?tab=invitations",
+        type: "CONNECTION_REQUEST",
+        connectionId: created.id,
       },
     });
 
@@ -347,6 +409,19 @@ export class ConnectionsService {
         receiver: { include: { studentDetail: true, mentorDetail: true } },
       },
     });
+
+    // If accepted, notify the original initiator
+    if (nextStatus === ConnectionStatus.CONNECTED) {
+      this.sendPushSafely(updated.initiatorId, {
+        title: "Connection Accepted",
+        body: `${updated.receiver.name} accepted your connection request. You are now connected!`,
+        data: {
+          route: "/connections",
+          type: "CONNECTION_ACCEPTED",
+          connectionId: updated.id,
+        },
+      });
+    }
 
     return this.mapConnectionToDto(updated, actorUserId);
   }
@@ -408,7 +483,7 @@ export class ConnectionsService {
       });
 
       if (!existing) {
-        await prisma.connection.create({
+        const created = await prisma.connection.create({
           data: {
             initiatorId: studentId,
             receiverId: mentorId,
@@ -416,22 +491,54 @@ export class ConnectionsService {
             type: ConnectionType.SESSION_BOOKING,
             bookingId,
           },
+          include: {
+            initiator: { select: { id: true, name: true } },
+            receiver: { select: { id: true, name: true } },
+          },
         });
         console.log(
           `[ConnectionsService.autoConnectOnSessionConfirmed] Created connection between student=${studentId} and mentor=${mentorId}`
         );
+        this.sendPushSafely(studentId, {
+          title: "New Connection",
+          body: `You are now connected with ${created.receiver.name}!`,
+          data: { route: "/connections", type: "CONNECTION_ACCEPTED", connectionId: created.id },
+        });
+        this.sendPushSafely(mentorId, {
+          title: "New Connection",
+          body: `You are now connected with ${created.initiator.name}!`,
+          data: { route: "/connections", type: "CONNECTION_ACCEPTED", connectionId: created.id },
+        });
       } else if (existing.status !== ConnectionStatus.CONNECTED) {
-        await prisma.connection.update({
+        const updated = await prisma.connection.update({
           where: { id: existing.id },
           data: {
             status: ConnectionStatus.CONNECTED,
             type: ConnectionType.SESSION_BOOKING,
             bookingId,
           },
+          include: {
+            initiator: { select: { id: true, name: true } },
+            receiver: { select: { id: true, name: true } },
+          },
         });
         console.log(
           `[ConnectionsService.autoConnectOnSessionConfirmed] Upgraded existing connection (${existing.id}) to CONNECTED`
         );
+        const studentPartnerName =
+          studentId === updated.initiatorId ? updated.receiver.name : updated.initiator.name;
+        const mentorPartnerName =
+          mentorId === updated.initiatorId ? updated.receiver.name : updated.initiator.name;
+        this.sendPushSafely(studentId, {
+          title: "New Connection",
+          body: `You are now connected with ${studentPartnerName}!`,
+          data: { route: "/connections", type: "CONNECTION_ACCEPTED", connectionId: updated.id },
+        });
+        this.sendPushSafely(mentorId, {
+          title: "New Connection",
+          body: `You are now connected with ${mentorPartnerName}!`,
+          data: { route: "/connections", type: "CONNECTION_ACCEPTED", connectionId: updated.id },
+        });
       }
     } catch (error) {
       // Log error but do not fail the booking confirmation transaction

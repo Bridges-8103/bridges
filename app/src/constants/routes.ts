@@ -12,6 +12,8 @@ export const ROUTES = {
   MENTOR_AVAILABILITY: '/mentor-availability',
   SELECT_TAGS: '/select-tags',
   CONNECTIONS: '/connections',
+  connections: (tab?: 'connections' | 'invitations') =>
+    (tab ? `/connections?tab=${tab}` : '/connections') as '/connections',
   mentorDetail: (id: string | number) => `/mentor/${id}` as `/mentor/[id]`,
   mentorBook: (id: string | number) => `/mentor/${id}/book` as `/mentor/[id]/book`,
   mentorConfirmBooking: (id: string | number) =>
