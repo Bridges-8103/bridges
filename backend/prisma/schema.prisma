@@ -53,6 +53,10 @@ model User {
   studentConversations Conversation[] @relation("StudentConversations")
   sentMessages         Message[]      @relation("SentMessages")
 
+  // User connections
+  connectionsInitiated Connection[] @relation("ConnectionInitiator")
+  connectionsReceived  Connection[] @relation("ConnectionReceiver")
+
   @@index([role])
   @@index([verificationStatus])
 }
@@ -287,4 +291,40 @@ model Message {
   sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, id])
+}
+
+// ==========================================
+// USER CONNECTIONS
+// ==========================================
+
+enum ConnectionStatus {
+  PENDING
+  CONNECTED
+  DECLINED
+  BLOCKED
+}
+
+enum ConnectionType {
+  SESSION_BOOKING
+  DIRECT_REQUEST
+}
+
+model Connection {
+  id          Int              @id @default(autoincrement())
+  initiatorId Int
+  receiverId  Int
+  status      ConnectionStatus @default(PENDING)
+  type        ConnectionType   @default(DIRECT_REQUEST)
+  bookingId   Int?             // Reference to the triggering session booking, if any
+  note        String?          // Optional message/intro note sent with connection request
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  initiator   User             @relation("ConnectionInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  receiver    User             @relation("ConnectionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([initiatorId, receiverId])
+  @@index([initiatorId, status])
+  @@index([receiverId, status])
+  @@index([bookingId])
 }
