@@ -3,7 +3,7 @@
     "name": "Bridges",
     "slug": "bridges",
     "owner": "megatunger",
-    "version": "1.0.46",
+    "version": "1.0.47",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "app",
@@ -17,12 +17,12 @@
       "supportsTablet": true,
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.bridges8103.app",
-      "buildNumber": "47",
+      "buildNumber": "48",
       "appleTeamId": "JR22X95AFT"
     },
     "android": {
       "package": "com.bridges.app",
-      "versionCode": 47,
+      "versionCode": 48,
       "adaptiveIcon": {
         "backgroundColor": "#140C59",
         "foregroundImage": "./assets/images/splash-icon.png"
