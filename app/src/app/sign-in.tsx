@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useSignIn } from '@clerk/expo';
-import { SocialAuthButton } from '@/components/auth/social-auth-button';
 import { ROUTES } from '@/constants/routes';
 
 export default function SignInScreen() {
@@ -72,10 +71,6 @@ export default function SignInScreen() {
     }
   };
 
-  const handleSocialSignIn = (provider: 'google' | 'apple') => {
-    Alert.alert(`${provider === 'google' ? 'Google' : 'Apple'} Sign-In`, 'OAuth authentication flow initiated.');
-  };
-
   const handleBack = () => {
     if (router.canGoBack()) {
       router.back();
@@ -109,19 +104,6 @@ export default function SignInScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Welcome back 👋</Text>
             <Text style={styles.subtitle}>Sign in to continue to Bridges.</Text>
-          </View>
-
-          {/* Social Sign-In Buttons */}
-          <View style={styles.socialRow}>
-            <SocialAuthButton provider="google" onPress={() => handleSocialSignIn('google')} />
-            <SocialAuthButton provider="apple" onPress={() => handleSocialSignIn('apple')} />
-          </View>
-
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or continue with email</Text>
-            <View style={styles.dividerLine} />
           </View>
 
           {/* Form Fields */}
@@ -268,27 +250,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 15,
     lineHeight: 22,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerText: {
-    color: '#9CA3AF',
-    fontSize: 13,
-    fontWeight: '500',
   },
   form: {
     gap: 16,
