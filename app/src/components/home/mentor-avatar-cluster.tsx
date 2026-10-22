@@ -2,11 +2,11 @@ import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 const AVATARS = {
-  center: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=256&h=256&fit=crop&crop=faces', // Dr. Priya Nair
-  topLeft: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces', // Marcus Okonkwo
-  topRight: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=256&h=256&fit=crop&crop=faces', // Sarah Chen
-  bottomLeft: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=256&h=256&fit=crop&crop=faces', // Sofia Alvarez
-  bottomRight: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces', // David Kim
+  center: 'https://i.pravatar.cc/300?u=mentor-1',
+  topLeft: 'https://i.pravatar.cc/300?u=mentor-2',
+  topRight: 'https://i.pravatar.cc/300?u=mentor-4',
+  bottomLeft: 'https://i.pravatar.cc/300?u=mentor-3',
+  bottomRight: 'https://i.pravatar.cc/300?u=mentor-5',
 };
 
 export function MentorAvatarCluster() {

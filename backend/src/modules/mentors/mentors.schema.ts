@@ -27,7 +27,7 @@ export const mentorDtoSchema = z
       email: "srinivas.kamath@example.com",
       role: "MENTOR",
       bio: "PhD researcher in neurosciences.",
-      avatarUrl: "https://assets.megatunger.com/avatars/mentors/srinivas.kamath.png",
+      avatarUrl: "https://i.pravatar.cc/300?u=srinivas.kamath",
       jobTitle: "Higher Degree by Research Candidate",
       company: "College of Health",
       industry: "School of Pharmacy and Biomedical Sciences",

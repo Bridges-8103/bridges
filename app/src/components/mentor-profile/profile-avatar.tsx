@@ -7,8 +7,7 @@ import { useUser } from '@clerk/expo';
 
 import { useTheme } from '@/hooks/use-theme';
 
-const DEFAULT_AVATAR =
-  'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces';
+const DEFAULT_AVATAR = 'https://i.pravatar.cc/300?u=default-user';
 
 export function ProfileAvatar({ uri, onEdit }: { uri?: string; onEdit?: () => void }) {
   const theme = useTheme();

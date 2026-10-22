@@ -25,8 +25,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEFAULT_AVATAR =
-  'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces';
+const DEFAULT_AVATAR = 'https://i.pravatar.cc/300?u=default-user';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, getToken } = useClerkAuth();

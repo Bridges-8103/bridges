@@ -88,7 +88,7 @@ export default function HomeScreen() {
   const userAvatar =
     profile?.avatarUrl ||
     user?.avatarUri ||
-    'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces';
+    'https://i.pravatar.cc/300?u=default-user';
 
   const displayCategories =
     taxonomyCategories.length > 0

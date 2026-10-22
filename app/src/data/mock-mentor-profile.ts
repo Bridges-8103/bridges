@@ -11,8 +11,7 @@ export const MAJOR_OPTIONS = [
 ];
 
 export const mockMentorProfile: MentorProfile = {
-  avatarUri:
-    'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=256&h=256&fit=crop&crop=faces',
+  avatarUri: 'https://i.pravatar.cc/300?u=mock-profile',
   fullName: 'Jamie Chen',
   bio: 'Aspiring ML engineer passionate about intelligent systems. Looking for mentors in AI research and tech startups.',
   university: 'Stanford University',

@@ -116,6 +116,53 @@
         ]
       },
       "common": {},
+      "connectionParamsSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "connectionQuerySchema": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 100,
+            "minimum": 0
+          },
+          "search": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "MENTOR"
+            ]
+          }
+        },
+        "required": [
+          "page",
+          "limit"
+        ]
+      },
       "createBookingsSchema": {
         "type": "object",
         "properties": {
@@ -136,6 +183,24 @@
         "required": [
           "mentorId",
           "bookings"
+        ]
+      },
+      "createConnectionSchema": {
+        "type": "object",
+        "properties": {
+          "receiverId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "receiverId"
         ]
       },
       "CreateProfileInput": {
@@ -454,6 +519,25 @@
           "message": "API and database are healthy."
         }
       },
+      "listMessagesQuerySchema": {
+        "type": "object",
+        "properties": {
+          "after": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "default": 100,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "limit"
+        ]
+      },
       "MentorDetailResponse": {
         "type": "object",
         "properties": {
@@ -639,7 +723,7 @@
           "email": "srinivas.kamath@example.com",
           "role": "MENTOR",
           "bio": "PhD researcher in neurosciences.",
-          "avatarUrl": "https://assets.megatunger.com/avatars/mentors/srinivas.kamath.png",
+          "avatarUrl": "https://i.pravatar.cc/300?u=srinivas.kamath",
           "jobTitle": "Higher Degree by Research Candidate",
           "company": "College of Health",
           "industry": "School of Pharmacy and Biomedical Sciences",
@@ -1145,6 +1229,19 @@
           "token"
         ]
       },
+      "sendMessageSchema": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
       "sendTestPushSchema": {
         "type": "object",
         "properties": {
@@ -1249,6 +1346,19 @@
           "isAvailable"
         ]
       },
+      "startConversationSchema": {
+        "type": "object",
+        "properties": {
+          "participantId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "participantId"
+        ]
+      },
       "studentDetailSchema": {
         "type": "object",
         "properties": {
@@ -1296,6 +1406,20 @@
           "INTEREST",
           "SKILL",
           "BOTH"
+        ]
+      },
+      "targetUserParamsSchema": {
+        "type": "object",
+        "properties": {
+          "targetUserId": {
+            "type": "integer",
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "targetUserId"
         ]
       },
       "TaxonomyCategory": {
@@ -1514,6 +1638,21 @@
                   ""
                 ]
               }
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "updateConnectionStatusSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "CONNECTED",
+              "DECLINED"
             ]
           }
         },
@@ -2001,6 +2140,339 @@
         "description": "",
         "tags": [
           "Bookings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/connections": {
+      "get": {
+        "operationId": "get-connections",
+        "summary": "List active connections",
+        "description": "Retrieves a paginated list of the authenticated user's active 1st-degree connections.",
+        "tags": [
+          "Connections"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-connections",
+        "summary": "Send connection request",
+        "description": "Sends a connection request to another student or mentor, or auto-connects if the receiver already requested.",
+        "tags": [
+          "Connections"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/createConnectionSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/connections/{id}": {
+      "patch": {
+        "operationId": "patch-connections-{id}",
+        "summary": "Respond to connection request",
+        "description": "Accepts or declines an incoming pending connection request.",
+        "tags": [
+          "Connections"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/updateConnectionStatusSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "delete-connections-{id}",
+        "summary": "Remove connection or withdraw request",
+        "description": "Removes a mutual connection or withdraws a pending outgoing request.",
+        "tags": [
+          "Connections"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/connections/requests": {
+      "get": {
+        "operationId": "get-connections-requests",
+        "summary": "List pending connection requests",
+        "description": "Retrieves incoming requests awaiting response and outgoing sent requests.",
+        "tags": [
+          "Connections"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/connections/status/{targetUserId}": {
+      "get": {
+        "operationId": "get-connections-status-{targetUserId}",
+        "summary": "Get connection status with target user",
+        "description": "Retrieves relationship status between authenticated user and target user (NONE, PENDING_SENT, PENDING_RECEIVED, CONNECTED, SELF).",
+        "tags": [
+          "Connections"
+        ],
+        "parameters": [
+          {
+            "name": "targetUserId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: targetUserId"
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/conversations": {
+      "get": {
+        "operationId": "get-conversations",
+        "summary": "List the authenticated user's conversations (chat-eligible mentor/student pairs)",
+        "description": "",
+        "tags": [
+          "Conversations"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-conversations",
+        "summary": "Get or create the conversation with another user (requires a confirmed session between them)",
+        "description": "",
+        "tags": [
+          "Conversations"
+        ],
+        "parameters": [],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/conversations/{id}": {
+      "get": {
+        "operationId": "get-conversations-{id}",
+        "summary": "Get a single conversation summary (used for the chat header)",
+        "description": "",
+        "tags": [
+          "Conversations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
+    "/conversations/{id}/messages": {
+      "get": {
+        "operationId": "get-conversations-{id}-messages",
+        "summary": "List messages in chronological order. Pass `?after=<messageId>` to fetch only newer messages",
+        "description": "",
+        "tags": [
+          "Conversations"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "123",
+            "description": "Path parameter: id"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      },
+      "post": {
+        "operationId": "post-conversations-{id}-messages",
+        "summary": "Send a message in a conversation",
+        "description": "",
+        "tags": [
+          "Conversations"
         ],
         "parameters": [
           {
@@ -2777,6 +3249,33 @@
         }
       }
     },
+    "/students": {
+      "get": {
+        "operationId": "get-students",
+        "summary": "Search and list students",
+        "description": "Retrieves a paginated list of students for peer networking and discovery.",
+        "tags": [
+          "Students"
+        ],
+        "parameters": [],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "$ref": "#/components/responses/400"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/taxonomy": {
       "get": {
         "operationId": "get-taxonomy",
@@ -2869,6 +3368,12 @@
       "name": "Bookings"
     },
     {
+      "name": "Connections"
+    },
+    {
+      "name": "Conversations"
+    },
+    {
       "name": "Health"
     },
     {
@@ -2882,6 +3387,9 @@
     },
     {
       "name": "Profile"
+    },
+    {
+      "name": "Students"
     },
     {
       "name": "Taxonomy"
